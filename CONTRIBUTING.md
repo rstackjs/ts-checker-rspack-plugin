@@ -29,11 +29,11 @@ Please follow the [Documentation guidelines](#documentation).
 
 Some issues are created without information requested in the [Bug report guideline](#bug-report). Help make them easier to resolve by adding any relevant information.
 
-Issues with the [design label](https://github.com/rspack-contrib/ts-checker-rspack-plugin/labels/design) are meant to discuss the implementation of new features. Participating in the discussion is a good opportunity to get involved and influence the future direction of **ts-checker-rspack-plugin**.
+Issues with the [design label](https://github.com/rstackjs/ts-checker-rspack-plugin/labels/design) are meant to discuss the implementation of new features. Participating in the discussion is a good opportunity to get involved and influence the future direction of **ts-checker-rspack-plugin**.
 
 ### Fix bugs and implement features
 
-Confirmed bugs and ready-to-implement features are marked with the [help wanted label](https://github.com/rspack-contrib/ts-checker-rspack-plugin/labels/bug). Post a comment on an issue to indicate you would like to work on it and to request help from the contributors and the community.
+Confirmed bugs and ready-to-implement features are marked with the [help wanted label](https://github.com/rstackjs/ts-checker-rspack-plugin/labels/bug). Post a comment on an issue to indicate you would like to work on it and to request help from the contributors and the community.
 
 ### Bug report
 

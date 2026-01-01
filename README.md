@@ -22,7 +22,7 @@ Big thanks to `fork-ts-checker-webpack-plugin` creators and contributors for the
 - Supports modern TypeScript features like [project references](https://www.typescriptlang.org/docs/handbook/project-references.html) and [incremental mode](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-4.html#faster-subsequent-builds-with-the---incremental-flag) ✨
 - Displays nice error messages with the [code frame](https://babeljs.io/docs/en/next/babel-code-frame.html) formatter 🌈
 
-💡 For Rsbuild projects, use [@rsbuild/plugin-type-check](https://github.com/rspack-contrib/rsbuild-plugin-type-check) to get out-of-the-box experience.
+💡 For Rsbuild projects, use [@rsbuild/plugin-type-check](https://github.com/rstackjs/rsbuild-plugin-type-check) to get out-of-the-box experience.
 
 ## Installation
 
