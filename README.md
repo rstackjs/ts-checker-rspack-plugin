@@ -248,7 +248,8 @@ setting "generateTrace" compiler option. This is an instruction from [microsoft/
 ## Enabling incremental mode
 
 TypeScript's "incremental" mode speeds up initial cold-start typechecks keeping an on-disk cache.
-It does not speed up subsequent subsequent re-typechecking during the runtime of the Rspack dev-server.
+
+It does not speed up subsequent subsequent re-typechecking during the runtime of the dev server.
 
 To enable incremental mode, set `"compilerOptions.incremental": true` in your `tsconfig.json`:
 
