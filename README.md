@@ -262,7 +262,7 @@ To enable incremental mode, set `"compilerOptions.incremental": true` in your `t
 
 In the past we also recommended to combine incremental mode with specifying `build: true` in `TsCheckerRspackPlugin` settings to enable TypeScript's ["Build" mode](https://www.typescriptlang.org/docs/handbook/project-references.html#build-mode-for-typescript) designed to handle [Project References](https://www.typescriptlang.org/docs/handbook/project-references.html#build-mode-for-typescript).
 
-However, "Build" mode causes significant slowdowns for re-typechecks when the Rspack dev-server is already running, as it switches from TypeScript's in-memory "Watch" mode to "Build" mode. If you need "Build" mode, it can be configured as:
+However, "Build" mode causes significant slowdowns for re-typechecks when the dev server is already running, as it switches from TypeScript's in-memory "Watch" mode to "Build" mode. If you need "Build" mode, it can be configured as:
 
 ```js
 new TsCheckerRspackPlugin({
