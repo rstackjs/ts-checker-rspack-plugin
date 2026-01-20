@@ -46,7 +46,14 @@ export function useSolutionBuilder() {
         hostDiagnostics.push(diagnostic);
         updateDiagnostics(config.configFile, hostDiagnostics);
       },
-      undefined,
+      (diagnostic) => {
+        // clean host diagnostics when rebuild start
+        // 6031: 'Starting compilation in watch mode...'
+        // 6032: 'File change detected. Starting incremental compilation...'
+        if (diagnostic.code === 6031 || diagnostic.code === 6032) {
+          hostDiagnostics = [];
+        }
+      },
       undefined,
       undefined,
       (builderProgram) => {

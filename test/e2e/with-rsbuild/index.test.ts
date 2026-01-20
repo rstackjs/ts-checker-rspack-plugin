@@ -1,4 +1,5 @@
-import { dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
+import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
 import {
@@ -190,4 +191,121 @@ test('should host diagnostics in SolutionBuilder (e.g. TS6202 for circular proje
   expect(logs.find((log) => log.includes('TS6202'))).toBeTruthy();
 
   restore();
+});
+
+test('should cleanup host diagnostics in SolutionBuilder when rebuild in dev mode', async ({
+  page,
+}) => {
+  const { logs, restore } = proxyConsole();
+
+  const srcIndexPath = resolve(__dirname, 'src/index.ts');
+  const originalSrcIndex = await readFile(srcIndexPath, 'utf8');
+
+  const updateSrcIndex = async (updater: (content: string) => string) => {
+    const current = await readFile(srcIndexPath, 'utf8');
+    const next = updater(current);
+    await writeFile(srcIndexPath, next);
+  };
+
+  const rsbuild = await createRsbuild({
+    rsbuildConfig: {
+      tools: {
+        rspack: {
+          plugins: [
+            new TsCheckerRspackPlugin({
+              async: false,
+              typescript: {
+                build: true,
+              },
+            }),
+          ],
+        },
+      },
+    },
+  });
+
+  const { server, urls } = await rsbuild.startDevServer();
+
+  try {
+    await page.goto(urls[0]);
+
+    expect(logs.find((log) => log.includes('File:') && log.includes('/src/index.ts'))).toBeTruthy();
+    expect(
+      logs.find((log) =>
+        log.includes(`Argument of type 'string' is not assignable to parameter of type 'number'.`),
+      ),
+    ).toBeTruthy();
+
+    // 1) Fix TS2345 by changing src/index.ts to `const res = add(1, 2);`
+    const logLenAfterFirstCompile = logs.length;
+    await updateSrcIndex((content) =>
+      content.replace(/const\s+res\s*=\s*add\([^;]*\);/, 'const res = add(1, 2);'),
+    );
+    await expect
+      .poll(
+        () =>
+          logs
+            .slice(logLenAfterFirstCompile)
+            .some((log) =>
+              log.includes(
+                `Argument of type 'string' is not assignable to parameter of type 'number'.`,
+              ),
+            ),
+        {
+          timeout: 20_000,
+        },
+      )
+      .toBeFalsy();
+
+    // 2) Add a syntax error: `console.log('foo)` and verify `Unterminated string literal.` error appears
+    // and the previous type error doesn't re-appear in subsequent rebuild logs.
+    const logLenAfterFixTypeError = logs.length;
+    await updateSrcIndex((content) => `${content}\nconsole.log('foo)\n`);
+    await expect
+      .poll(
+        () => {
+          const nextLogs = logs.slice(logLenAfterFixTypeError);
+          const hasUnterminated = nextLogs.some((log) =>
+            log.includes('Unterminated string literal.'),
+          );
+          const hasTypeError = nextLogs.some((log) =>
+            log.includes(
+              `Argument of type 'string' is not assignable to parameter of type 'number'.`,
+            ),
+          );
+          return hasUnterminated && !hasTypeError;
+        },
+        {
+          timeout: 20_000,
+        },
+      )
+      .toBeTruthy();
+
+    // 3) Fix syntax error: `console.log('foo')` and verify the error is gone.
+    const logLenAfterUnterminated = logs.length;
+    await updateSrcIndex((content) => content.replace("console.log('foo)", "console.log('foo')"));
+    await expect
+      .poll(
+        () => {
+          const nextLogs = logs.slice(logLenAfterUnterminated);
+          const hasUnterminated = nextLogs.some((log) =>
+            log.includes('Unterminated string literal.'),
+          );
+          const hasTypeError = nextLogs.some((log) =>
+            log.includes(
+              `Argument of type 'string' is not assignable to parameter of type 'number'.`,
+            ),
+          );
+          return !hasUnterminated && !hasTypeError;
+        },
+        {
+          timeout: 20_000,
+        },
+      )
+      .toBeTruthy();
+  } finally {
+    await writeFile(srcIndexPath, originalSrcIndex);
+    restore();
+    await server.close();
+  }
 });
