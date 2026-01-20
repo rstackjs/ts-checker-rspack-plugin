@@ -46,7 +46,10 @@ export function useSolutionBuilder() {
         hostDiagnostics.push(diagnostic);
         updateDiagnostics(config.configFile, hostDiagnostics);
       },
-      undefined,
+      () => {
+        // clean host diagnostics when rebuild start
+        hostDiagnostics = [];
+      },
       undefined,
       undefined,
       (builderProgram) => {
