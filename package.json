@@ -1,6 +1,6 @@
 {
   "name": "ts-checker-rspack-plugin",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "description": "Runs typescript type checker and linter on separate process.",
   "keywords": [
     "rspack",
