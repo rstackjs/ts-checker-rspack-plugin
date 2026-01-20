@@ -13,6 +13,7 @@ let solutionBuilderHost:
   | undefined;
 let solutionBuilder: ts.SolutionBuilder<ts.SemanticDiagnosticsBuilderProgram> | undefined;
 let hostDiagnostics: ts.Diagnostic[] = [];
+const HOST_DIAGNOSTICS_KEY = `GLOBAL_${config.configFile}`;
 
 export function useSolutionBuilder() {
   if (!solutionBuilderHost) {
@@ -44,7 +45,7 @@ export function useSolutionBuilder() {
         // SolutionBuilder can emit graph-level diagnostics while building the project graph
         // (e.g. invalid/cyclic project references) — i.e. before any Program/BuilderProgram exists.
         hostDiagnostics.push(diagnostic);
-        updateDiagnostics(config.configFile, hostDiagnostics);
+        updateDiagnostics(HOST_DIAGNOSTICS_KEY, hostDiagnostics);
       },
       (diagnostic) => {
         // clean host diagnostics when rebuild start
@@ -52,19 +53,15 @@ export function useSolutionBuilder() {
         // 6032: 'File change detected. Starting incremental compilation...'
         if (diagnostic.code === 6031 || diagnostic.code === 6032) {
           hostDiagnostics = [];
+          updateDiagnostics(HOST_DIAGNOSTICS_KEY, hostDiagnostics);
         }
       },
       undefined,
       undefined,
       (builderProgram) => {
-        const programConfigFile = getConfigFilePathFromBuilderProgram(builderProgram);
-        const programDiagnostics = getDiagnosticsOfProgram(builderProgram);
-
         updateDiagnostics(
-          programConfigFile,
-          programConfigFile === config.configFile
-            ? [...programDiagnostics, ...hostDiagnostics]
-            : programDiagnostics,
+          getConfigFilePathFromBuilderProgram(builderProgram),
+          getDiagnosticsOfProgram(builderProgram),
         );
         emitTsBuildInfoIfNeeded(builderProgram);
         stopTracingIfNeeded(builderProgram);
