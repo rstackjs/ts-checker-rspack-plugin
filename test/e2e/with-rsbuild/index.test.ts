@@ -230,7 +230,6 @@ test('should cleanup host diagnostics in SolutionBuilder when rebuild in dev mod
     await page.goto(urls[0]);
 
     expect(logs.find((log) => log.includes('File:') && log.includes('/src/index.ts'))).toBeTruthy();
-
     expect(
       logs.find((log) =>
         log.includes(`Argument of type 'string' is not assignable to parameter of type 'number'.`),
@@ -238,44 +237,72 @@ test('should cleanup host diagnostics in SolutionBuilder when rebuild in dev mod
     ).toBeTruthy();
 
     // 1) Fix TS2345 by changing src/index.ts to `const res = add(1, 2);`
+    const logLenAfterFirstCompile = logs.length;
     await updateSrcIndex((content) =>
       content.replace(/const\s+res\s*=\s*add\([^;]*\);/, 'const res = add(1, 2);'),
     );
-
-    // Wait for watcher rebuild.
-    await page.waitForTimeout(1500);
-    const logLenAfterFixTypeError = logs.length;
-
-    // 2) Add a syntax error: `console.log('foo)` and verify `Unterminated string literal.`
-    await updateSrcIndex((content) => `${content}\nconsole.log('foo)\n`);
-
     await expect
-      .poll(() => logs.some((log) => log.includes('Unterminated string literal.')), {
-        timeout: 20_000,
-      })
-      .toBeTruthy();
+      .poll(
+        () =>
+          logs
+            .slice(logLenAfterFirstCompile)
+            .some((log) =>
+              log.includes(
+                `Argument of type 'string' is not assignable to parameter of type 'number'.`,
+              ),
+            ),
+        {
+          timeout: 20_000,
+        },
+      )
+      .toBeFalsy();
 
-    // Also ensure the previous type error doesn't re-appear in subsequent rebuild logs.
-    expect(
-      logs
-        .slice(logLenAfterFixTypeError)
-        .some((log) =>
-          log.includes(
-            `Argument of type 'string' is not assignable to parameter of type 'number'.`,
-          ),
-        ),
-    ).toBeFalsy();
+    // 2) Add a syntax error: `console.log('foo)` and verify `Unterminated string literal.` error appears
+    // and the previous type error doesn't re-appear in subsequent rebuild logs.
+    const logLenAfterFixTypeError = logs.length;
+    await updateSrcIndex((content) => `${content}\nconsole.log('foo)\n`);
+    await expect
+      .poll(
+        () => {
+          const nextLogs = logs.slice(logLenAfterFixTypeError);
+          const hasUnterminated = nextLogs.some((log) =>
+            log.includes('Unterminated string literal.'),
+          );
+          const hasTypeError = nextLogs.some((log) =>
+            log.includes(
+              `Argument of type 'string' is not assignable to parameter of type 'number'.`,
+            ),
+          );
+          return hasUnterminated && !hasTypeError;
+        },
+        {
+          timeout: 20_000,
+        },
+      )
+      .toBeTruthy();
 
     // 3) Fix syntax error: `console.log('foo')` and verify the error is gone.
     const logLenAfterUnterminated = logs.length;
     await updateSrcIndex((content) => content.replace("console.log('foo)", "console.log('foo')"));
-    await page.waitForTimeout(1500);
-
-    expect(
-      logs
-        .slice(logLenAfterUnterminated)
-        .some((log) => log.includes('Unterminated string literal.')),
-    ).toBeFalsy();
+    await expect
+      .poll(
+        () => {
+          const nextLogs = logs.slice(logLenAfterUnterminated);
+          const hasUnterminated = nextLogs.some((log) =>
+            log.includes('Unterminated string literal.'),
+          );
+          const hasTypeError = nextLogs.some((log) =>
+            log.includes(
+              `Argument of type 'string' is not assignable to parameter of type 'number'.`,
+            ),
+          );
+          return !hasUnterminated && !hasTypeError;
+        },
+        {
+          timeout: 20_000,
+        },
+      )
+      .toBeTruthy();
   } finally {
     await writeFile(srcIndexPath, originalSrcIndex);
     restore();
