@@ -34,11 +34,11 @@
     "bump": "npx bumpp"
   },
   "dependencies": {
-    "@babel/code-frame": "^7.27.1",
+    "@babel/code-frame": "^7.29.0",
     "@rspack/lite-tapable": "^1.1.0",
     "chokidar": "^3.6.0",
     "is-glob": "^4.0.3",
-    "memfs": "^4.51.1",
+    "memfs": "^4.56.10",
     "minimatch": "^9.0.5",
     "picocolors": "^1.1.1"
   },
@@ -52,17 +52,17 @@
     }
   },
   "devDependencies": {
-    "@rslib/core": "^0.18.2",
-    "@rspack/core": "^1.6.5",
-    "@rstest/core": "^0.7.5",
-    "@types/babel__code-frame": "^7.0.6",
+    "@rslib/core": "^0.19.4",
+    "@rspack/core": "^1.7.4",
+    "@rstest/core": "^0.8.1",
+    "@types/babel__code-frame": "^7.27.0",
     "@types/is-glob": "^4.0.4",
     "@types/mock-fs": "^4.13.4",
     "@types/node": "^16.18.126",
     "cross-env": "^10.1.0",
     "husky": "^9.1.7",
     "mock-fs": "^5.5.0",
-    "prettier": "^3.7.3",
+    "prettier": "^3.8.1",
     "strip-ansi": "^6.0.1",
     "typescript": "^5.9.3"
   },
@@ -70,5 +70,5 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "packageManager": "pnpm@10.24.0"
+  "packageManager": "pnpm@10.28.2"
 }
