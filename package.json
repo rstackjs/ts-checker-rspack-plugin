@@ -58,7 +58,7 @@
     "@types/babel__code-frame": "^7.27.0",
     "@types/is-glob": "^4.0.4",
     "@types/mock-fs": "^4.13.4",
-    "@types/node": "^16.18.126",
+    "@types/node": "^24.10.9",
     "cross-env": "^10.1.0",
     "husky": "^9.1.7",
     "mock-fs": "^5.5.0",
