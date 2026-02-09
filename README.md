@@ -245,6 +245,11 @@ setting "generateTrace" compiler option. This is an instruction from [microsoft/
 6. Open `types.json` in an editor
 7. When you see a type ID in the tracing output, go-to-line {id} to find data about that type
 
+## Performance optimization
+
+This plugin delegates type checking to TypeScript, so overall performance is mostly determined by `tsc` itself.
+
+If you need faster type checks, start by optimizing your TypeScript setup using the [official TypeScript performance guide](https://github.com/microsoft/TypeScript/wiki/Performance).
 ## Enabling incremental mode
 
 TypeScript's "incremental" mode speeds up initial cold-start typechecks keeping an on-disk cache.
