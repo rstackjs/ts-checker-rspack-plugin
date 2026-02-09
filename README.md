@@ -250,6 +250,16 @@ setting "generateTrace" compiler option. This is an instruction from [microsoft/
 This plugin delegates type checking to TypeScript, so overall performance is mostly determined by `tsc` itself.
 
 If you need faster type checks, start by optimizing your TypeScript setup using the [official TypeScript performance guide](https://github.com/microsoft/TypeScript/wiki/Performance).
+
+For example, properly configuring the `include` and `exclude` scopes in `tsconfig.json` can significantly reduce unnecessary type checking and improve TypeScript performance:
+
+```json title="tsconfig.json"
+{
+  "include": ["src"],
+  "exclude": ["**/node_modules", "**/.*/"]
+}
+```
+
 ## Enabling incremental mode
 
 TypeScript's "incremental" mode speeds up initial cold-start typechecks keeping an on-disk cache.
