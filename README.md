@@ -249,8 +249,7 @@ setting "generateTrace" compiler option. This is an instruction from [microsoft/
 
 This plugin delegates type checking to TypeScript, so overall performance is mostly determined by `tsc` itself.
 
-If you need faster type checks, start by optimizing your TypeScript setup using the official TypeScript performance guide:
-[Performance - TypeScript Wiki](https://github.com/microsoft/TypeScript/wiki/Performance)
+If you need faster type checks, start by optimizing your TypeScript setup using the official TypeScript performance guide: [Performance - TypeScript Wiki](https://github.com/microsoft/TypeScript/wiki/Performance)
 
 ## Enabling incremental mode
 
