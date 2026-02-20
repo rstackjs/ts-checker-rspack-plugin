@@ -8,18 +8,12 @@ importers:
 
   .:
     dependencies:
-      '@babel/code-frame':
-        specifier: ^7.29.0
-        version: 7.29.0
       '@rspack/lite-tapable':
         specifier: ^1.1.0
         version: 1.1.0
       chokidar:
         specifier: ^3.6.0
         version: 3.6.0
-      is-glob:
-        specifier: ^4.0.3
-        version: 4.0.3
       memfs:
         specifier: ^4.56.10
         version: 4.56.10(tslib@2.8.1)
@@ -27,6 +21,9 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1
     devDependencies:
+      '@babel/code-frame':
+        specifier: ^7.29.0
+        version: 7.29.0
       '@rslib/core':
         specifier: ^0.19.4
         version: 0.19.4(typescript@5.9.3)
@@ -54,6 +51,9 @@ importers:
       husky:
         specifier: ^9.1.7
         version: 9.1.7
+      is-glob:
+        specifier: ^4.0.3
+        version: 4.0.3
       minimatch:
         specifier: ^10.2.2
         version: 10.2.2
