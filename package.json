@@ -16,31 +16,46 @@
     "url": "https://github.com/rstackjs/ts-checker-rspack-plugin.git"
   },
   "license": "MIT",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "files": [
     "lib"
   ],
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
   "scripts": {
     "build": "rslib build",
+    "bump": "npx bumpp",
     "dev": "rslib build -w",
     "lint": "echo lint",
-    "test": "pnpm build && pnpm test:unit && pnpm test:e2e",
-    "test:unit": "rstest --config=test/unit/rstest.config.ts",
-    "test:e2e": "cd test/e2e && pnpm test",
-    "test:e2e:setup": "cd test/e2e && pnpm run setup",
     "precommit": "pnpm build && pnpm test:unit",
     "prepare": "husky && pnpm build",
-    "bump": "npx bumpp"
+    "test": "pnpm build && pnpm test:unit && pnpm test:e2e",
+    "test:e2e": "cd test/e2e && pnpm test",
+    "test:e2e:setup": "cd test/e2e && pnpm run setup",
+    "test:unit": "rstest --config=test/unit/rstest.config.ts"
   },
   "dependencies": {
-    "@babel/code-frame": "^7.29.0",
     "@rspack/lite-tapable": "^1.1.0",
     "chokidar": "^3.6.0",
-    "is-glob": "^4.0.3",
     "memfs": "^4.56.10",
-    "minimatch": "^9.0.5",
     "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@babel/code-frame": "^7.29.0",
+    "@rslib/core": "^0.19.4",
+    "@rspack/core": "^1.7.4",
+    "@rstest/core": "^0.8.1",
+    "@types/babel__code-frame": "^7.27.0",
+    "@types/is-glob": "^4.0.4",
+    "@types/mock-fs": "^4.13.4",
+    "@types/node": "^24.10.9",
+    "cross-env": "^10.1.0",
+    "husky": "^9.1.7",
+    "is-glob": "^4.0.3",
+    "minimatch": "^10.2.2",
+    "mock-fs": "^5.5.0",
+    "prettier": "^3.8.1",
+    "strip-ansi": "^6.0.1",
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "@rspack/core": "^1.0.0 || ^2.0.0-0",
@@ -51,24 +66,9 @@
       "optional": true
     }
   },
-  "devDependencies": {
-    "@rslib/core": "^0.19.4",
-    "@rspack/core": "^1.7.4",
-    "@rstest/core": "^0.8.1",
-    "@types/babel__code-frame": "^7.27.0",
-    "@types/is-glob": "^4.0.4",
-    "@types/mock-fs": "^4.13.4",
-    "@types/node": "^24.10.9",
-    "cross-env": "^10.1.0",
-    "husky": "^9.1.7",
-    "mock-fs": "^5.5.0",
-    "prettier": "^3.8.1",
-    "strip-ansi": "^6.0.1",
-    "typescript": "^5.9.3"
-  },
+  "packageManager": "pnpm@10.28.2",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
-  },
-  "packageManager": "pnpm@10.28.2"
+  }
 }
