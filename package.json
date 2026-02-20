@@ -39,7 +39,7 @@
     "chokidar": "^3.6.0",
     "is-glob": "^4.0.3",
     "memfs": "^4.56.10",
-    "minimatch": "^9.0.5",
+    "minimatch": "^10.2.2",
     "picocolors": "^1.1.1"
   },
   "peerDependencies": {
