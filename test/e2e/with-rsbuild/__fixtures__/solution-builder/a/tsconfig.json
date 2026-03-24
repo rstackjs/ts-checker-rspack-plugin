@@ -5,9 +5,7 @@
     "outDir": "./dist",
     "target": "ES2021",
     "module": "ES2020",
-    "moduleResolution": "node",
-    "strict": true,
-    "types": []
+    "moduleResolution": "node"
   },
   "include": [
     "src"

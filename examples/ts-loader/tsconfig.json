@@ -7,8 +7,6 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
-    "strict": true,
-    "baseUrl": "./src",
     "outDir": "./dist",
     "forceConsistentCasingInFileNames": true
   },

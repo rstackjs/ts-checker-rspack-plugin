@@ -1,11 +1,9 @@
 {
   "compilerOptions": {
-    "baseUrl": "./",
     "outDir": "./dist",
     "target": "ES2021",
     "lib": ["DOM", "ESNext"],
     "module": "ES2020",
-    "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "noUnusedLocals": true,
@@ -13,8 +11,6 @@
     "resolveJsonModule": true,
     "moduleResolution": "node",
     "useDefineForClassFields": true,
-    // make type checker faster by not including types
-    "types": [],
     "paths": {
       "@/*": ["./src/*"]
     }

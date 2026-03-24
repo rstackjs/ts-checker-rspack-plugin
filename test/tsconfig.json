@@ -10,9 +10,8 @@
 		"resolveJsonModule": true,
 		"types": ["@rstest/core/globals"],
 		"paths": {
-			"src": ["../src"]
-		},
-		"baseUrl": "../"
+			"src/*": ["../src/*"]
+		}
 	},
 	"include": ["../src", "**/*.spec.ts"],
 	"exclude": ["node_modules"]

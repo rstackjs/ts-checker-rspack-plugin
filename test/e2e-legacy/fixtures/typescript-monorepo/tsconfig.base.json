@@ -8,8 +8,6 @@
     "importHelpers": false,
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
-    "strict": true,
-    "baseUrl": ".",
     "composite": true,
     "incremental": true,
     "declaration": true,
