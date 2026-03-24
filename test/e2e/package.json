@@ -13,6 +13,6 @@
     "@rsbuild/plugin-webpack-swc": "^1.0.8",
     "cross-env": "^7.0.3",
     "playwright": "^1.49.0",
-    "typescript": "^5.7.2"
+    "typescript": "^6.0.2"
   }
 }

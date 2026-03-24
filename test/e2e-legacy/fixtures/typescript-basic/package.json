@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "ts-loader": "^5.0.0",
-    "typescript": "^3.8.0",
+    "typescript": "^6.0.2",
     "@rspack/core": "^1.1.3",
     "@rspack/cli": "^1.1.3"
   }

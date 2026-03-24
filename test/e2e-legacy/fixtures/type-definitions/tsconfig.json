@@ -6,9 +6,7 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "skipLibCheck": false,
-    "skipDefaultLibCheck": false,
-    "strict": true,
-    "baseUrl": "./"
+    "skipDefaultLibCheck": false
   },
   "include": ["./"],
   "exclude": ["node_modules"]
