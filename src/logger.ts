@@ -3,4 +3,4 @@ interface Logger {
   error: (message: string) => void;
 }
 
-export { Logger };
+export type { Logger };

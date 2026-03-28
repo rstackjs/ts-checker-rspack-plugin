@@ -25,7 +25,7 @@ type RpcRemoteMethod<T extends RpcMethod> = T extends (...args: infer A) => infe
     : (...args: A) => Promise<R>
   : (...args: unknown[]) => Promise<unknown>;
 
-export {
+export type {
   RpcCallMessage,
   RpcResolveMessage,
   RpcRejectMessage,

@@ -21,4 +21,6 @@ function compareIssuePositions(positionA?: IssuePosition, positionB?: IssuePosit
   );
 }
 
-export { IssuePosition, compareIssuePositions };
+export { compareIssuePositions };
+
+export type { IssuePosition };

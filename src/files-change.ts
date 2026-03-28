@@ -69,10 +69,11 @@ function aggregateFilesChanges(changes: FilesChange[]): FilesChange {
 }
 
 export {
-  FilesChange,
   getFilesChange,
   consumeFilesChange,
   updateFilesChange,
   clearFilesChange,
   aggregateFilesChanges,
 };
+
+export type { FilesChange };

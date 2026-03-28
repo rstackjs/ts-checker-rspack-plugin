@@ -18,4 +18,4 @@ interface WatchFileSystem {
   watch: Watch;
 }
 
-export { WatchFileSystem, Watchpack };
+export type { WatchFileSystem, Watchpack };

@@ -52,4 +52,6 @@ function createIssueConfig(
   };
 }
 
-export { IssueConfig, createIssueConfig };
+export { createIssueConfig };
+
+export type { IssueConfig };

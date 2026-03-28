@@ -19,4 +19,9 @@ type FormatterOptions =
   | CodeframeFormatterOptions
   | Formatter;
 
-export { FormatterOptions, FormatterType, BasicFormatterOptions, CodeframeFormatterOptions };
+export type {
+  FormatterOptions,
+  FormatterType,
+  BasicFormatterOptions,
+  CodeframeFormatterOptions,
+};

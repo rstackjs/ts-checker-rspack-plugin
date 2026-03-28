@@ -48,4 +48,6 @@ function createFormatterConfig(options: FormatterOptions | undefined): Formatter
   );
 }
 
-export { FormatterConfig, createFormatterConfig };
+export { createFormatterConfig };
+
+export type { FormatterConfig };

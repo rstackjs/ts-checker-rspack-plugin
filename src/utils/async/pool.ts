@@ -48,4 +48,6 @@ function createPool(size: number): Pool {
   return pool;
 }
 
-export { Pool, createPool };
+export { createPool };
+
+export type { Pool };

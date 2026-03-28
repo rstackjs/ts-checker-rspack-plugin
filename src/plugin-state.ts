@@ -28,4 +28,6 @@ function createPluginState(): TsCheckerRspackPluginState {
   };
 }
 
-export { TsCheckerRspackPluginState, createPluginState };
+export { createPluginState };
+
+export type { TsCheckerRspackPluginState };
