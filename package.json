@@ -22,9 +22,9 @@
     "lib"
   ],
   "scripts": {
-    "build": "rslib build",
+    "build": "rslib",
     "bump": "npx bumpp",
-    "dev": "rslib build -w",
+    "dev": "rslib -w",
     "lint": "echo lint",
     "precommit": "pnpm build && pnpm test:unit",
     "prepare": "husky && pnpm build",
