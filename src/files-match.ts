@@ -5,4 +5,4 @@ interface FilesMatch {
   extensions: string[];
 }
 
-export { FilesMatch };
+export type { FilesMatch };

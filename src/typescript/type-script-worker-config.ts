@@ -59,4 +59,6 @@ function createTypeScriptWorkerConfig(
   };
 }
 
-export { createTypeScriptWorkerConfig, TypeScriptWorkerConfig };
+export { createTypeScriptWorkerConfig };
+
+export type { TypeScriptWorkerConfig };

@@ -8,4 +8,4 @@ interface TypeScriptConfigOverwrite {
   references?: { path: string; prepend?: boolean }[];
 }
 
-export { TypeScriptConfigOverwrite };
+export type { TypeScriptConfigOverwrite };

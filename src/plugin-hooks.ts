@@ -58,4 +58,6 @@ function getPluginHooks(compiler: rspack.Compiler | rspack.MultiCompiler) {
   return hooks;
 }
 
-export { getPluginHooks, TsCheckerRspackPluginHooks };
+export { getPluginHooks };
+
+export type { TsCheckerRspackPluginHooks };

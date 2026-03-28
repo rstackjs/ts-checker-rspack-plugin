@@ -5,4 +5,4 @@ interface TypeScriptDiagnosticsOptions {
   global: boolean;
 }
 
-export { TypeScriptDiagnosticsOptions };
+export type { TypeScriptDiagnosticsOptions };

@@ -5,7 +5,7 @@ import fs from 'node:fs';
 
 import { createBasicFormatter } from './basic-formatter';
 import type { Formatter } from './formatter';
-import { BabelCodeFrameOptions } from './types/babel__code-frame';
+import type { BabelCodeFrameOptions } from './types/babel__code-frame';
 
 function createCodeFrameFormatter(options?: BabelCodeFrameOptions): Formatter {
   const basicFormatter = createBasicFormatter();
@@ -33,4 +33,6 @@ function createCodeFrameFormatter(options?: BabelCodeFrameOptions): Formatter {
   };
 }
 
-export { createCodeFrameFormatter, BabelCodeFrameOptions };
+export { createCodeFrameFormatter };
+
+export type { BabelCodeFrameOptions };

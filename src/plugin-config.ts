@@ -43,4 +43,6 @@ function createPluginConfig(
   };
 }
 
-export { TsCheckerRspackPluginConfig, createPluginConfig };
+export { createPluginConfig };
+
+export type { TsCheckerRspackPluginConfig };

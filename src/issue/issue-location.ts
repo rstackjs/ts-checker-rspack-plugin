@@ -29,4 +29,6 @@ function formatIssueLocation(location: IssueLocation) {
   return `${location.start.line}:${location.start.column}`;
 }
 
-export { IssueLocation, compareIssueLocations, formatIssueLocation };
+export { compareIssueLocations, formatIssueLocation };
+
+export type { IssueLocation };

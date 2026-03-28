@@ -10,4 +10,6 @@ function composeIssuePredicates(predicates: IssuePredicate[]): IssuePredicate {
   return (issue) => predicates.some((predicate) => predicate(issue));
 }
 
-export { IssuePredicate, createTrivialIssuePredicate, composeIssuePredicates };
+export { createTrivialIssuePredicate, composeIssuePredicates };
+
+export type { IssuePredicate };

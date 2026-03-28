@@ -13,4 +13,4 @@ type TypeScriptWorkerOptions = {
   typescriptPath?: string;
 };
 
-export { TypeScriptWorkerOptions };
+export type { TypeScriptWorkerOptions };

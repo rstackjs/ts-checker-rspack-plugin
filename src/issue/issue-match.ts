@@ -22,4 +22,6 @@ function createIssuePredicateFromIssueMatch(context: string, match: IssueMatch):
   };
 }
 
-export { IssueMatch, createIssuePredicateFromIssueMatch };
+export { createIssuePredicateFromIssueMatch };
+
+export type { IssueMatch };

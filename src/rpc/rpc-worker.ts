@@ -78,4 +78,6 @@ function getRpcWorkerData(): unknown {
   return JSON.parse(process.env[WORKER_DATA_ENV_KEY] || '{}');
 }
 
-export { createRpcWorker, getRpcWorkerData, RpcWorker };
+export { createRpcWorker, getRpcWorkerData };
+
+export type { RpcWorker };

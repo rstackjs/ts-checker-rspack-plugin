@@ -59,4 +59,6 @@ function deduplicateAndSortIssues(issues: Issue[]) {
   );
 }
 
-export { Issue, isIssue, deduplicateAndSortIssues };
+export { isIssue, deduplicateAndSortIssues };
+
+export type { Issue };

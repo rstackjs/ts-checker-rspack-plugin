@@ -12,4 +12,4 @@ interface TsCheckerRspackPluginOptions {
   devServer?: boolean;
 }
 
-export { TsCheckerRspackPluginOptions };
+export type { TsCheckerRspackPluginOptions };

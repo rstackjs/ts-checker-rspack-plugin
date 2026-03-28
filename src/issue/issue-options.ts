@@ -10,4 +10,4 @@ interface IssueOptions {
   defaultSeverity?: IssueDefaultSeverity;
 }
 
-export { IssueOptions, IssuePredicateOption };
+export type { IssueOptions, IssuePredicateOption };
