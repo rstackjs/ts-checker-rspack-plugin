@@ -41,9 +41,9 @@
   },
   "devDependencies": {
     "@babel/code-frame": "^7.29.0",
-    "@rslib/core": "^0.20.3",
+    "@rslib/core": "^0.21.0",
     "@rspack/core": "^1.7.11",
-    "@rstest/core": "^0.9.6",
+    "@rstest/core": "^0.9.7",
     "@types/babel__code-frame": "^7.27.0",
     "@types/is-glob": "^4.0.4",
     "@types/mock-fs": "^4.13.4",
@@ -53,7 +53,7 @@
     "is-glob": "^4.0.3",
     "minimatch": "^10.2.5",
     "mock-fs": "^5.5.0",
-    "prettier": "^3.8.1",
+    "prettier": "^3.8.2",
     "strip-ansi": "^7.2.0",
     "typescript": "^6.0.2"
   },
