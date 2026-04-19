@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "@rspack/lite-tapable": "^1.1.0",
-    "chokidar": "^3.6.0",
+    "chokidar": "^5.0.0",
     "memfs": "^4.57.2",
     "picocolors": "^1.1.1"
   },
