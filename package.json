@@ -36,14 +36,14 @@
   "dependencies": {
     "@rspack/lite-tapable": "^1.1.0",
     "chokidar": "^3.6.0",
-    "memfs": "^4.57.1",
+    "memfs": "^4.57.2",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
     "@babel/code-frame": "^7.29.0",
-    "@rslib/core": "^0.21.0",
+    "@rslib/core": "^0.21.2",
     "@rspack/core": "^1.7.11",
-    "@rstest/core": "^0.9.7",
+    "@rstest/core": "^0.9.8",
     "@types/babel__code-frame": "^7.27.0",
     "@types/is-glob": "^4.0.4",
     "@types/mock-fs": "^4.13.4",
@@ -53,9 +53,9 @@
     "is-glob": "^4.0.3",
     "minimatch": "^10.2.5",
     "mock-fs": "^5.5.0",
-    "prettier": "^3.8.2",
+    "prettier": "^3.8.3",
     "strip-ansi": "^7.2.0",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.3"
   },
   "peerDependencies": {
     "@rspack/core": "^1.0.0 || ^2.0.0-0",
