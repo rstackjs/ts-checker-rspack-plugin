@@ -41,9 +41,9 @@
   },
   "devDependencies": {
     "@babel/code-frame": "^7.29.0",
-    "@rslib/core": "^0.21.2",
+    "@rslib/core": "^0.21.3",
     "@rspack/core": "^1.7.11",
-    "@rstest/core": "^0.9.8",
+    "@rstest/core": "^0.9.9",
     "@types/babel__code-frame": "^7.27.0",
     "@types/is-glob": "^4.0.4",
     "@types/mock-fs": "^4.13.4",
@@ -66,7 +66,7 @@
       "optional": true
     }
   },
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@10.33.2",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
