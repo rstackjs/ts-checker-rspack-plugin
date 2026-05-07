@@ -278,7 +278,7 @@ function normalizeAndResolvePath(path: string) {
   let normalizedPath = realFileSystem.normalizePath(path);
   try {
     normalizedPath = realFileSystem.realPath(normalizedPath);
-  } catch (error) {
+  } catch {
     // ignore error - maybe file doesn't exist
   }
   return normalizedPath;
