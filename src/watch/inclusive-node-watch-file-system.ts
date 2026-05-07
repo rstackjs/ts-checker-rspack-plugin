@@ -1,4 +1,4 @@
-import path, { extname } from 'node:path';
+import { extname } from 'node:path';
 
 import type { FSWatcher } from 'chokidar';
 import chokidar from 'chokidar';

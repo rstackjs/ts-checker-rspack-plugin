@@ -20,7 +20,7 @@ export function invalidateTsBuildInfo() {
     if (tsBuildInfoPath) {
       try {
         system.deleteFile(tsBuildInfoPath);
-      } catch (error) {
+      } catch {
         // silent
       }
     }

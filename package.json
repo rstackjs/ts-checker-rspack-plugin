@@ -25,7 +25,8 @@
     "build": "rslib",
     "bump": "npx bumpp",
     "dev": "rslib -w",
-    "lint": "echo lint",
+    "lint": "rslint",
+    "lint:write": "rslint --fix",
     "precommit": "pnpm build && pnpm test:unit",
     "prepare": "husky && pnpm build",
     "test": "pnpm build && pnpm test:unit && pnpm test:e2e",
@@ -42,6 +43,7 @@
   "devDependencies": {
     "@babel/code-frame": "^7.29.0",
     "@rslib/core": "^0.21.3",
+    "@rslint/core": "^0.5.1",
     "@rspack/core": "^2.0.1",
     "@rstest/core": "^0.9.10",
     "@types/babel__code-frame": "^7.27.0",
