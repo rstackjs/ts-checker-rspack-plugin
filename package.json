@@ -42,14 +42,14 @@
   },
   "devDependencies": {
     "@babel/code-frame": "^7.29.0",
-    "@rslib/core": "^0.21.3",
-    "@rslint/core": "^0.5.1",
-    "@rspack/core": "^2.0.1",
+    "@rslib/core": "^0.21.4",
+    "@rslint/core": "^0.5.2",
+    "@rspack/core": "^2.0.2",
     "@rstest/core": "^0.9.10",
     "@types/babel__code-frame": "^7.27.0",
     "@types/is-glob": "^4.0.4",
     "@types/mock-fs": "^4.13.4",
-    "@types/node": "^24.12.2",
+    "@types/node": "^24.12.3",
     "cross-env": "^10.1.0",
     "husky": "^9.1.7",
     "is-glob": "^4.0.3",
@@ -68,7 +68,7 @@
       "optional": true
     }
   },
-  "packageManager": "pnpm@10.33.2",
+  "packageManager": "pnpm@10.33.4",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
