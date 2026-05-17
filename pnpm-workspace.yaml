@@ -1,3 +1,6 @@
 packages:
   - 'examples/*'
   - 'test/**/*'
+
+allowBuilds:
+  core-js: false
