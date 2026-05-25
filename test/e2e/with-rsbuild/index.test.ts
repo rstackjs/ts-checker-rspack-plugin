@@ -13,6 +13,7 @@ import { TsCheckerRspackPlugin } from '../../../lib';
 import { getRandomPort, proxyConsole } from '../helper';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const buildFailedError = /build failed!|Rspack build failed\./;
 
 /**
  * Although this plugin is designed for Rspack, it can also be used in webpack in some cases.
@@ -55,7 +56,7 @@ test('should throw error when exist type errors', async () => {
     },
   });
 
-  await expect(rsbuild.build()).rejects.toThrowError('build failed!');
+  await expect(rsbuild.build()).rejects.toThrowError(buildFailedError);
 
   expect(logs.find((log) => log.includes('File:') && log.includes('/src/index.ts'))).toBeTruthy();
 
@@ -187,7 +188,7 @@ test('should host diagnostics in SolutionBuilder (e.g. TS6202 for circular proje
     },
   });
 
-  await expect(rsbuild.build()).rejects.toThrowError('build failed!');
+  await expect(rsbuild.build()).rejects.toThrowError(buildFailedError);
   expect(logs.find((log) => log.includes('TS6202'))).toBeTruthy();
 
   restore();
