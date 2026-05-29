@@ -28,7 +28,7 @@
     "lint": "rslint",
     "lint:write": "rslint --fix",
     "precommit": "pnpm build && pnpm test:unit",
-    "prepare": "husky && pnpm build",
+    "prepare": "husky",
     "test": "pnpm build && pnpm test:unit && pnpm test:e2e",
     "test:e2e": "cd test/e2e && pnpm test",
     "test:e2e:setup": "cd test/e2e && pnpm run setup",
