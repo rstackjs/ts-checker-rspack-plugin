@@ -51,7 +51,7 @@ describe('typescript/type-script-go-runner', () => {
     expect(getTypeScriptGoDependencies(config)).toEqual({
       files: ['/project/tsconfig.json'],
       dirs: ['/project'],
-      excluded: ['/project/node_modules'],
+      excluded: [path.join(config.context, 'node_modules')],
       extensions: ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs', '.json'],
     });
   });
@@ -134,7 +134,7 @@ describe('typescript/type-script-go-runner', () => {
     ).toMatchObject([
       {
         code: 'TS2345',
-        file: '/project/src/index.ts',
+        file: path.resolve(config.context, 'src/index.ts'),
         location: {
           start: {
             column: 20,

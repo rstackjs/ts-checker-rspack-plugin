@@ -89,7 +89,9 @@ describe('typescript/type-script-support', () => {
   it('does not print the typescriptPath hint for the default typescript-go path', async () => {
     const existsSyncSpy = rs
       .spyOn(fs, 'existsSync')
-      .mockImplementation((filePath) => !filePath.toString().endsWith('lib/getExePath.js'));
+      .mockImplementation(
+        (filePath) => !filePath.toString().replace(/\\/g, '/').endsWith('/lib/getExePath.js')
+      );
     const { assertTypeScriptSupport } = await import('src/typescript/type-script-support');
     let error: Error | undefined;
 
