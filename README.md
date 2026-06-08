@@ -114,7 +114,43 @@ Options for the TypeScript checker (`typescript` option object).
 | `mode`              | `'readonly'` or `'write-dts'` or `'write-tsbuildinfo'` or `'write-references'` | `build === true ? 'write-tsbuildinfo' ? 'readonly'`                                                            | Use `readonly` if you don't want to write anything on the disk, `write-dts` to write only `.d.ts` files, `write-tsbuildinfo` to write only `.tsbuildinfo` files, `write-references` to write both `.js` and `.d.ts` files of project references (last 2 modes requires `build: true`).                                                                                                                                                                                                                                                                                   |
 | `diagnosticOptions` | `object`                                                                       | `{ syntactic: false, semantic: true, declaration: false, global: false }`                                      | Settings to select which diagnostics do we want to perform.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `profile`           | `boolean`                                                                      | `false`                                                                                                        | Measures and prints timings related to the TypeScript performance.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `typescriptPath`    | `string`                                                                       | `require.resolve('typescript')`                                                                                | If supplied this is a custom path where TypeScript can be found.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `typescriptPath`    | `string`                                                                       | `tsgo === true ? require.resolve('@typescript/native-preview/package.json') : require.resolve('typescript')`   | If supplied this is a custom path where TypeScript can be found. In `tsgo` mode, it must be an absolute path to `@typescript/native-preview/package.json`.                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `tsgo`              | `boolean`                                                                      | `false`                                                                                                        | Enables experimental TypeScript Go (`@typescript/native-preview`) support. The plugin runs the tsgo binary in a child process.                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+
+#### TypeScript Go support
+
+`typescript.tsgo` is an experimental, CLI-based integration for [typescript-go](https://github.com/microsoft/typescript-go). Because typescript-go does not provide the JavaScript compiler API used by the default checker yet, this mode runs the tsgo binary and parses its output to report diagnostics. When diagnostics can be parsed safely, they are rendered by the existing formatter; otherwise, the plugin prints the raw tsgo output and fails the build when tsgo exits with errors. This integration may change when TypeScript 7.1 provides a JavaScript API for tsgo.
+
+Supported in tsgo mode:
+
+- `typescript.configFile`, `typescript.context`, `typescript.build`, and `typescript.typescriptPath`.
+- `async`.
+- `logger`.
+- `tsconfig.json` compiler options used by tsgo, including `incremental` and `composite`.
+
+Partially supported in tsgo mode:
+
+- `issue.include` and `issue.exclude` work for diagnostics whose header can be matched from tsgo output, including `file`, `line`, `column`, `code`, and `message`.
+- `issue.defaultSeverity` works for matched diagnostics.
+- Raw tsgo stdout/stderr is printed when the plugin cannot safely parse the output.
+
+Not supported in tsgo mode:
+
+- `typescript.configOverwrite`.
+- `typescript.diagnosticOptions`.
+- `typescript.profile`.
+- TypeScript API based formatting or filesystem output rewrites.
+- Plugin-controlled declaration or reference emit modes such as `write-dts` and `write-references`; tsgo is always run with `--noEmit`.
+
+To use it, install `@typescript/native-preview` and enable `tsgo`:
+
+```js
+new TsCheckerRspackPlugin({
+  typescript: {
+    tsgo: true,
+  },
+});
+```
 
 ### Issues options
 

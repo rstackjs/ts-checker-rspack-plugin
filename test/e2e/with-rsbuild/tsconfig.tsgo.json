@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist",
+    "target": "ES2022",
+    "lib": ["DOM", "ESNext"],
+    "module": "ES2020",
+    "moduleResolution": "bundler",
+    "skipLibCheck": true,
+    "strict": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./dist/tsconfig.tsgo.tsbuildinfo"
+  },
+  "include": ["src"]
+}

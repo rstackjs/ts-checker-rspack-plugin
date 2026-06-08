@@ -4,6 +4,7 @@ import type * as rspack from '@rspack/core';
 
 import type { TypeScriptConfigOverwrite } from './type-script-config-overwrite';
 import type { TypeScriptDiagnosticsOptions } from './type-script-diagnostics-options';
+import { TYPESCRIPT_GO_PACKAGE_JSON } from './type-script-go-constants';
 import type { TypeScriptWorkerOptions } from './type-script-worker-options';
 
 interface TypeScriptWorkerConfig {
@@ -17,11 +18,24 @@ interface TypeScriptWorkerConfig {
   diagnosticOptions: TypeScriptDiagnosticsOptions;
   profile: boolean;
   typescriptPath: string;
+  tsgo?: boolean;
+}
+
+function resolveDefaultTypeScriptPath(tsgo?: boolean): string {
+  if (tsgo === true) {
+    try {
+      return require.resolve(TYPESCRIPT_GO_PACKAGE_JSON);
+    } catch {
+      return TYPESCRIPT_GO_PACKAGE_JSON;
+    }
+  }
+
+  return require.resolve('typescript');
 }
 
 function createTypeScriptWorkerConfig(
   compiler: rspack.Compiler,
-  options: TypeScriptWorkerOptions | undefined
+  options: TypeScriptWorkerOptions | undefined,
 ): TypeScriptWorkerConfig {
   let configFile =
     typeof options === 'object' ? options.configFile || 'tsconfig.json' : 'tsconfig.json';
@@ -30,13 +44,14 @@ function createTypeScriptWorkerConfig(
   configFile = path.normalize(
     path.isAbsolute(configFile)
       ? configFile
-      : path.resolve(compiler.options.context || process.cwd(), configFile)
+      : path.resolve(compiler.options.context || process.cwd(), configFile),
   );
 
   const optionsAsObject: Exclude<TypeScriptWorkerOptions, boolean> =
     typeof options === 'object' ? options : {};
 
-  const typescriptPath = optionsAsObject.typescriptPath || require.resolve('typescript');
+  const typescriptPath =
+    optionsAsObject.typescriptPath || resolveDefaultTypeScriptPath(optionsAsObject.tsgo);
 
   return {
     enabled: Boolean(options) || options === undefined,
@@ -55,7 +70,7 @@ function createTypeScriptWorkerConfig(
       global: false,
       ...(optionsAsObject.diagnosticOptions || {}),
     },
-    typescriptPath: typescriptPath,
+    typescriptPath,
   };
 }
 

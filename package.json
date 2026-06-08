@@ -50,6 +50,7 @@
     "@types/is-glob": "^4.0.4",
     "@types/mock-fs": "^4.13.4",
     "@types/node": "^24.12.4",
+    "@typescript/native-preview": "7.0.0-dev.20260606.1",
     "cross-env": "^10.1.0",
     "husky": "^9.1.7",
     "is-glob": "^4.0.3",
@@ -61,10 +62,14 @@
   },
   "peerDependencies": {
     "@rspack/core": "^1.0.0 || ^2.0.0",
+    "@typescript/native-preview": "7.x",
     "typescript": ">=3.8.0"
   },
   "peerDependenciesMeta": {
     "@rspack/core": {
+      "optional": true
+    },
+    "@typescript/native-preview": {
       "optional": true
     }
   },

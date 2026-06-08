@@ -11,6 +11,7 @@ type TypeScriptWorkerOptions = {
   diagnosticOptions?: Partial<TypeScriptDiagnosticsOptions>;
   profile?: boolean;
   typescriptPath?: string;
+  tsgo?: boolean;
 };
 
 export type { TypeScriptWorkerOptions };
