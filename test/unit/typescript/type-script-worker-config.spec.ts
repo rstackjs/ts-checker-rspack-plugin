@@ -25,6 +25,11 @@ describe('typescript/type-scripts-worker-config', () => {
     profile: false,
     typescriptPath: require.resolve('typescript'),
   };
+  const tsgoConfiguration: TypeScriptWorkerConfig = {
+    ...configuration,
+    tsgo: true,
+    typescriptPath: require.resolve('@typescript/native-preview/package.json'),
+  };
 
   beforeEach(() => {
     compiler = {
@@ -77,6 +82,14 @@ describe('typescript/type-scripts-worker-config', () => {
       },
     ],
     [{ profile: true }, { ...configuration, profile: true }],
+    [{ tsgo: true }, tsgoConfiguration],
+    [
+      { tsgo: true, typescriptPath: '/custom/native-preview/package.json' },
+      {
+        ...tsgoConfiguration,
+        typescriptPath: '/custom/native-preview/package.json',
+      },
+    ],
   ])('creates configuration from options %p', async (options, expectedConfig) => {
     const { createTypeScriptWorkerConfig } = await import(
       'src/typescript/type-script-worker-config'

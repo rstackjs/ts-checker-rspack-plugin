@@ -6,6 +6,7 @@ import { tapAfterCompileToAddDependencies } from './hooks/tap-after-compile-to-a
 import { tapAfterEnvironmentToPatchWatching } from './hooks/tap-after-environment-to-patch-watching';
 import { tapErrorToLogMessage } from './hooks/tap-error-to-log-message';
 import { tapStartToRunWorkers } from './hooks/tap-start-to-run-workers';
+import { tapStartToRunTypeScriptGo } from './hooks/tap-start-to-run-type-script-go';
 import { tapStopToTerminateWorkers } from './hooks/tap-stop-to-terminate-workers';
 import { createPluginConfig } from './plugin-config';
 import { getPluginHooks } from './plugin-hooks';
@@ -51,6 +52,15 @@ class TsCheckerRspackPlugin {
     const state = createPluginState();
 
     assertTypeScriptSupport(config.typescript);
+
+    if (config.typescript.tsgo) {
+      tapAfterEnvironmentToPatchWatching(compiler, state);
+      tapStartToRunTypeScriptGo(compiler, config, state);
+      tapAfterCompileToAddDependencies(compiler, config, state);
+      tapErrorToLogMessage(compiler, config);
+      return;
+    }
+
     const getIssuesWorker = createRpcWorker<GetIssuesWorker>(
       path.resolve(__dirname, './getIssuesWorker.js'),
       config.typescript,

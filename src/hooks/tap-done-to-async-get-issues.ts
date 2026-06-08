@@ -11,11 +11,12 @@ import { getPluginHooks } from '../plugin-hooks';
 import type { TsCheckerRspackPluginState } from '../plugin-state';
 import { isPending } from '../utils/async/is-pending';
 import { wait } from '../utils/async/wait';
+import { isTypeScriptGoIssue } from '../typescript/type-script-go-runner';
 
 function tapDoneToAsyncGetIssues(
   compiler: rspack.Compiler,
   config: TsCheckerRspackPluginConfig,
-  state: TsCheckerRspackPluginState
+  state: TsCheckerRspackPluginState,
 ) {
   const hooks = getPluginHooks(compiler);
   const { debug } = getInfrastructureLogger(compiler);
@@ -53,17 +54,34 @@ function tapDoneToAsyncGetIssues(
 
     debug(`Got ${issues?.length || 0} issues from getIssuesWorker.`);
 
-    // filter list of issues by provided issue predicate
-    issues = issues.filter(config.issue.predicate);
+    let visibleIssues: Issue[];
 
-    // modify list of issues in the plugin hooks
-    issues = hooks.issues.call(issues, stats.compilation);
+    if (config.typescript.tsgo) {
+      const internalIssues = issues.filter(isTypeScriptGoIssue);
+      visibleIssues = issues.filter((issue) => !isTypeScriptGoIssue(issue));
+
+      // filter list of issues by provided issue predicate
+      visibleIssues = visibleIssues.filter(config.issue.predicate);
+
+      // modify list of issues in the plugin hooks
+      visibleIssues = hooks.issues.call(visibleIssues, stats.compilation);
+
+      issues = internalIssues.concat(visibleIssues);
+    } else {
+      // filter list of issues by provided issue predicate
+      visibleIssues = issues.filter(config.issue.predicate);
+
+      // modify list of issues in the plugin hooks
+      visibleIssues = hooks.issues.call(visibleIssues, stats.compilation);
+
+      issues = visibleIssues;
+    }
 
     const formatter = createRspackFormatter(config.formatter.format, config.formatter.pathType);
 
-    if (issues.length) {
+    if (visibleIssues.length) {
       // follow Rspack's approach - one process.write to stderr with all errors and warnings
-      config.logger.error(issues.map((issue) => formatter(issue)).join('\n'));
+      config.logger.error(visibleIssues.map((issue) => formatter(issue)).join('\n'));
     }
 
     // print stats of the compilation
@@ -71,12 +89,12 @@ function tapDoneToAsyncGetIssues(
 
     // report issues to dev-server (overlay), if it's listening
     // skip reporting if there are no issues, to avoid an extra hot reload
-    if (issues.length && state.DevServerDoneTap) {
-      issues.forEach((issue) => {
+    if (visibleIssues.length && state.DevServerDoneTap) {
+      visibleIssues.forEach((issue) => {
         const error = new IssueRspackError(
           config.formatter.format(issue),
           config.formatter.pathType,
-          issue
+          issue,
         );
 
         if (issue.severity === 'warning') {

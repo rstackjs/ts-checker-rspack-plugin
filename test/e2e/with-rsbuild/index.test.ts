@@ -1,5 +1,5 @@
 import { dirname, resolve } from 'node:path';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
 import {
@@ -41,6 +41,12 @@ const createRsbuild = async (config: CreateRsbuildOptions) => {
     cwd: __dirname,
     rsbuildConfig,
   });
+};
+
+const expectNoVisibleTsgoInternalIssue = (logs: string[]) => {
+  // tsgo failures create internal issues only for type-check stats and bundler error counts.
+  // They should not be formatted as user-facing diagnostics.
+  expect(logs.some((log) => log.includes('TSGO:') || log.includes('tsgo check'))).toBeFalsy();
 };
 
 test('should throw error when exist type errors', async () => {
@@ -192,6 +198,151 @@ test('should host diagnostics in SolutionBuilder (e.g. TS6202 for circular proje
   expect(logs.find((log) => log.includes('TS6202'))).toBeTruthy();
 
   restore();
+});
+
+test('should throw error and pipe diagnostics when using typescript-go', async () => {
+  const { logs, restore } = proxyConsole();
+
+  const rsbuild = await createRsbuild({
+    rsbuildConfig: {
+      tools: {
+        rspack: {
+          plugins: [
+            new TsCheckerRspackPlugin({
+              typescript: {
+                tsgo: true,
+                configFile: './tsconfig.tsgo.json',
+              },
+            }),
+          ],
+        },
+      },
+    },
+  });
+
+  await expect(rsbuild.build()).rejects.toThrowError(buildFailedError);
+
+  expect(logs.find((log) => log.includes('TS2345'))).toBeTruthy();
+  expect(
+    logs.find((log) =>
+      log.includes(`Argument of type 'string' is not assignable to parameter of type 'number'.`),
+    ),
+  ).toBeTruthy();
+  expectNoVisibleTsgoInternalIssue(logs);
+  expect(logs.find((log) => log.includes('Found 1 error in'))).toBeFalsy();
+
+  restore();
+});
+
+test('should respect issue exclude for typescript-go diagnostics', async () => {
+  const logs: string[] = [];
+
+  const rsbuild = await createRsbuild({
+    rsbuildConfig: {
+      tools: {
+        rspack: {
+          plugins: [
+            new TsCheckerRspackPlugin({
+              logger: {
+                log: () => {},
+                error: (message) => logs.push(message),
+              },
+              issue: {
+                exclude: [{ code: 'TS2345' }],
+              },
+              typescript: {
+                tsgo: true,
+                configFile: './tsconfig.tsgo.json',
+              },
+            }),
+          ],
+        },
+      },
+    },
+  });
+
+  await expect(rsbuild.build()).resolves.toBeTruthy();
+  expect(logs.find((log) => log.includes('TS2345'))).toBeFalsy();
+});
+
+test('should rerun typescript-go on rebuild and update incremental build info', async () => {
+  const { logs, restore } = proxyConsole();
+
+  const srcIndexPath = resolve(__dirname, 'src/index.ts');
+  const tsBuildInfoPath = resolve(__dirname, 'dist/tsconfig.tsgo.tsbuildinfo');
+  const originalSrcIndex = await readFile(srcIndexPath, 'utf8');
+
+  const updateSrcIndex = async (updater: (content: string) => string) => {
+    const current = await readFile(srcIndexPath, 'utf8');
+    const next = updater(current);
+    await writeFile(srcIndexPath, next);
+  };
+
+  await rm(tsBuildInfoPath, { force: true });
+
+  const rsbuild = await createRsbuild({
+    rsbuildConfig: {
+      tools: {
+        rspack: {
+          plugins: [
+            new TsCheckerRspackPlugin({
+              async: false,
+              typescript: {
+                tsgo: true,
+                configFile: './tsconfig.tsgo.json',
+              },
+            }),
+          ],
+        },
+      },
+    },
+  });
+
+  const { server, urls } = await rsbuild.startDevServer();
+
+  try {
+    await fetch(urls[0]);
+
+    await expect
+      .poll(() => logs.some((log) => log.includes('TS2345')), { timeout: 20_000 })
+      .toBeTruthy();
+
+    await expect
+      .poll(
+        async () => {
+          try {
+            return (await stat(tsBuildInfoPath)).mtimeMs;
+          } catch {
+            return 0;
+          }
+        },
+        { timeout: 20_000 },
+      )
+      .toBeGreaterThan(0);
+
+    const firstTsBuildInfoMtime = (await stat(tsBuildInfoPath)).mtimeMs;
+    await updateSrcIndex((content) =>
+      content.replace(/const\s+res\s*=\s*add\([^;]*\);/, 'const res = add(1, 2);'),
+    );
+
+    await expect
+      .poll(
+        async () => {
+          try {
+            return (await stat(tsBuildInfoPath)).mtimeMs;
+          } catch {
+            return 0;
+          }
+        },
+        { timeout: 20_000 },
+      )
+      .toBeGreaterThan(firstTsBuildInfoMtime);
+  } finally {
+    await writeFile(srcIndexPath, originalSrcIndex);
+    restore();
+    await server.close();
+    await rm(tsBuildInfoPath, { force: true });
+  }
 });
 
 test('should cleanup host diagnostics in SolutionBuilder when rebuild in dev mode', async ({
