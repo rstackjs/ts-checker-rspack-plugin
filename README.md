@@ -121,7 +121,9 @@ Options for the TypeScript checker (`typescript` option object).
 
 `typescript.tsgo` can reduce type-checking time by about 5-10x, especially on large projects, by using the Go implementation of TypeScript. It enables experimental [typescript-go](https://github.com/microsoft/typescript-go) support through `@typescript/native-preview`.
 
-In this mode, the plugin runs the `tsgo` binary in a child process, parses its diagnostics, and reports them through the existing issue formatter when possible. If the output cannot be parsed safely, the raw `tsgo` output is printed and the build fails when `tsgo` exits with errors. It supports `typescript.configFile`, `typescript.context`, `typescript.build`, `typescript.typescriptPath`, `async`, `logger`, and `tsconfig.json` compiler options used by `tsgo`, including `incremental` and `composite`.
+In this mode, the plugin runs the `tsgo` binary in a child process, parses its diagnostics, and reports them through the existing issue formatter when possible. If the output cannot be parsed safely, the raw `tsgo` output is printed and the build fails when `tsgo` exits with errors.
+
+Supported options include `typescript.configFile`, `typescript.context`, `typescript.build`, `typescript.typescriptPath`, `async`, and `logger`. It also supports `tsconfig.json` compiler options used by `tsgo`, including `incremental` and `composite`.
 
 Install `@typescript/native-preview` and enable `tsgo`:
 
@@ -148,7 +150,7 @@ Limitations:
 
 - `issue.include`, `issue.exclude`, and `issue.defaultSeverity` only apply to diagnostics whose `tsgo` output can be matched by `file`, `line`, `column`, `code`, and `message`.
 - `typescript.configOverwrite`, `typescript.diagnosticOptions`, and `typescript.profile` are not supported.
-- TypeScript API based formatting or filesystem output rewrites are not supported.
+- TypeScript API-based formatting or filesystem output rewrites are not supported.
 - Plugin-controlled declaration or reference emit modes such as `write-dts` and `write-references` are not supported; `tsgo` always runs with `--noEmit`.
 - This integration may change when TypeScript provides a JavaScript API for `tsgo`.
 
