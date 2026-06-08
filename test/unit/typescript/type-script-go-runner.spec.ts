@@ -4,12 +4,13 @@ import type { TypeScriptWorkerConfig } from 'src/typescript/type-script-worker-c
 
 describe('typescript/type-script-go-runner', () => {
   const tsgoPackageJsonPath = require.resolve('@typescript/native-preview/package.json');
+  const projectContext = path.resolve('/project');
   const config: TypeScriptWorkerConfig = {
     enabled: true,
     memoryLimit: 8192,
-    configFile: '/project/tsconfig.json',
+    configFile: path.join(projectContext, 'tsconfig.json'),
     configOverwrite: {},
-    context: '/project',
+    context: projectContext,
     build: false,
     mode: 'readonly',
     diagnosticOptions: {
@@ -28,7 +29,7 @@ describe('typescript/type-script-go-runner', () => {
 
     expect(createTypeScriptGoArgs(config)).toEqual([
       '--project',
-      '/project/tsconfig.json',
+      config.configFile,
       '--noEmit',
       '--pretty',
     ]);
@@ -39,7 +40,7 @@ describe('typescript/type-script-go-runner', () => {
 
     expect(createTypeScriptGoArgs({ ...config, build: true })).toEqual([
       '--build',
-      '/project/tsconfig.json',
+      config.configFile,
       '--noEmit',
       '--pretty',
     ]);
@@ -49,8 +50,8 @@ describe('typescript/type-script-go-runner', () => {
     const { getTypeScriptGoDependencies } = await import('src/typescript/type-script-go-runner');
 
     expect(getTypeScriptGoDependencies(config)).toEqual({
-      files: ['/project/tsconfig.json'],
-      dirs: ['/project'],
+      files: [config.configFile],
+      dirs: [config.context],
       excluded: [path.join(config.context, 'node_modules')],
       extensions: ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs', '.json'],
     });

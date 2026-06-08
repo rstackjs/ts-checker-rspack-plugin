@@ -134,4 +134,30 @@ describe('typescript/type-script-support', () => {
     );
     expect(error?.message).not.toContain('If you set `typescript.typescriptPath`');
   });
+
+  it('throws error if the typescript-go executable cannot be resolved', async () => {
+    const originalExistsSync = fs.existsSync;
+    const existsSyncSpy = rs.spyOn(fs, 'existsSync').mockImplementation((filePath) => {
+      const normalizedPath = filePath.toString().replace(/\\/g, '/');
+
+      if (/\/tsgo(?:\.exe)?$/.test(normalizedPath)) {
+        return false;
+      }
+
+      return originalExistsSync(filePath);
+    });
+    const { assertTypeScriptGoExecutable } = await import('src/typescript/type-script-support');
+
+    try {
+      await expect(
+        assertTypeScriptGoExecutable({
+          ...configuration,
+          typescriptPath: require.resolve('@typescript/native-preview/package.json'),
+          tsgo: true,
+        })
+      ).rejects.toThrowError('Failed to resolve the tsgo executable: Executable not found');
+    } finally {
+      existsSyncSpy.mockRestore();
+    }
+  });
 });

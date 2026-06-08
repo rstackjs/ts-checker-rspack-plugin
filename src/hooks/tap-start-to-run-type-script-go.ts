@@ -7,6 +7,7 @@ import type { TsCheckerRspackPluginConfig } from '../plugin-config';
 import { getPluginHooks } from '../plugin-hooks';
 import { issuesPool } from '../plugin-pools';
 import type { TsCheckerRspackPluginState } from '../plugin-state';
+import { assertTypeScriptGoExecutable } from '../typescript/type-script-support';
 import {
   getTypeScriptGoDependencies,
   isTypeScriptGoStatsError,
@@ -26,6 +27,22 @@ type ErrorsInChildrenPrintContext = {
   red: (value: string) => string;
 };
 
+type StatsFilterHook = {
+  tap: (name: string, fn: (error: unknown) => false | undefined) => void;
+};
+
+type StatsPrintHook<TContext> = {
+  tap: (name: string, fn: (_: unknown, context: TContext) => string | undefined) => void;
+};
+
+function getStatsFilterHook(hook: unknown): StatsFilterHook {
+  return hook as StatsFilterHook;
+}
+
+function getStatsPrintHook<TContext>(hook: unknown): StatsPrintHook<TContext> {
+  return hook as StatsPrintHook<TContext>;
+}
+
 function tapStartToRunTypeScriptGo(
   compiler: rspack.Compiler,
   config: TsCheckerRspackPluginConfig,
@@ -33,9 +50,24 @@ function tapStartToRunTypeScriptGo(
 ) {
   const hooks = getPluginHooks(compiler);
   const { log, debug } = getInfrastructureLogger(compiler);
+  let assertTypeScriptGoExecutablePromise: Promise<void> | undefined;
 
-  compiler.hooks.run.tap('TsCheckerRspackPlugin', () => {
+  const assertTypeScriptGoExecutableOnce = async () => {
+    try {
+      if (!assertTypeScriptGoExecutablePromise) {
+        assertTypeScriptGoExecutablePromise = assertTypeScriptGoExecutable(config.typescript);
+      }
+      await assertTypeScriptGoExecutablePromise;
+    } catch (error) {
+      assertTypeScriptGoExecutablePromise = undefined;
+      throw error;
+    }
+  };
+
+  compiler.hooks.run.tapPromise('TsCheckerRspackPlugin', async () => {
     if (!state.initialized) {
+      await assertTypeScriptGoExecutableOnce();
+
       debug('Initializing tsgo for single run (not async).');
       state.initialized = true;
 
@@ -44,8 +76,10 @@ function tapStartToRunTypeScriptGo(
     }
   });
 
-  compiler.hooks.watchRun.tap('TsCheckerRspackPlugin', async () => {
+  compiler.hooks.watchRun.tapPromise('TsCheckerRspackPlugin', async () => {
     if (!state.initialized) {
+      await assertTypeScriptGoExecutableOnce();
+
       state.initialized = true;
 
       state.watching = true;
@@ -69,9 +103,7 @@ function tapStartToRunTypeScriptGo(
     }
 
     compilation.hooks.statsFactory.tap('TsCheckerRspackPlugin', (stats) => {
-      const errorsFilter = stats.hooks.filter.for('compilation.errors') as unknown as {
-        tap: (name: string, fn: (error: unknown) => false | undefined) => void;
-      };
+      const errorsFilter = getStatsFilterHook(stats.hooks.filter.for('compilation.errors'));
 
       errorsFilter.tap('TsCheckerRspackPlugin', (error) =>
         isTypeScriptGoStatsError(error) ? false : undefined,
@@ -95,14 +127,9 @@ function tapStartToRunTypeScriptGo(
     });
 
     compilation.hooks.statsPrinter.tap('TsCheckerRspackPlugin', (stats) => {
-      const errorsInChildrenPrinter = stats.hooks.print.for(
-        'compilation.errorsInChildren!',
-      ) as unknown as {
-        tap: (
-          name: string,
-          fn: (_: unknown, context: ErrorsInChildrenPrintContext) => string | undefined,
-        ) => void;
-      };
+      const errorsInChildrenPrinter = getStatsPrintHook<ErrorsInChildrenPrintContext>(
+        stats.hooks.print.for('compilation.errorsInChildren!'),
+      );
 
       errorsInChildrenPrinter.tap('TsCheckerRspackPlugin', (_, { compilation, red }) => {
         const hiddenErrorsCount = compilation[hiddenTypeScriptGoErrors] || 0;

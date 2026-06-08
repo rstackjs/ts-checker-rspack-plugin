@@ -4,7 +4,10 @@ import path from 'node:path';
 
 import type { TypeScriptWorkerConfig } from './type-script-worker-config';
 import { TYPESCRIPT_GO_PACKAGE, TYPESCRIPT_GO_PACKAGE_JSON } from './type-script-go-constants';
-import { resolveTypeScriptGoPackageJsonPath } from './type-script-go-runner';
+import {
+  resolveTypeScriptGoBinPath,
+  resolveTypeScriptGoPackageJsonPath,
+} from './type-script-go-runner';
 
 function isDefaultTypeScriptGoPath(typescriptPath: string): boolean {
   if (typescriptPath === TYPESCRIPT_GO_PACKAGE_JSON) {
@@ -18,6 +21,26 @@ function isDefaultTypeScriptGoPath(typescriptPath: string): boolean {
   }
 }
 
+function createTypeScriptGoSupportError(config: TypeScriptWorkerConfig, error?: unknown) {
+  const message = [
+    `When you enable TsCheckerRspackPlugin with \`typescript.tsgo\`, you must install \`${TYPESCRIPT_GO_PACKAGE}\` package.`,
+  ];
+
+  if (!isDefaultTypeScriptGoPath(config.typescriptPath)) {
+    message.push(
+      `If you set \`typescript.typescriptPath\`, it must be an absolute path to \`${TYPESCRIPT_GO_PACKAGE_JSON}\`.`,
+    );
+  }
+
+  if (error instanceof Error && error.message) {
+    message.push(`Failed to resolve the tsgo executable: ${error.message}`);
+  }
+
+  message.push(`You can install it with \`npm add ${TYPESCRIPT_GO_PACKAGE} -D\`.`);
+
+  return new Error(message.join(os.EOL));
+}
+
 function assertTypeScriptGoSupport(config: TypeScriptWorkerConfig) {
   try {
     const tsgoPackageJsonPath = resolveTypeScriptGoPackageJsonPath(config);
@@ -26,20 +49,16 @@ function assertTypeScriptGoSupport(config: TypeScriptWorkerConfig) {
     if (!fs.existsSync(getExePathPath)) {
       throw new Error();
     }
-  } catch {
-    const message = [
-      `When you enable TsCheckerRspackPlugin with \`typescript.tsgo\`, you must install \`${TYPESCRIPT_GO_PACKAGE}\` package.`,
-    ];
+  } catch (error) {
+    throw createTypeScriptGoSupportError(config, error);
+  }
+}
 
-    if (!isDefaultTypeScriptGoPath(config.typescriptPath)) {
-      message.push(
-        `If you set \`typescript.typescriptPath\`, it must be an absolute path to \`${TYPESCRIPT_GO_PACKAGE_JSON}\`.`,
-      );
-    }
-
-    message.push(`You can install it with \`npm add ${TYPESCRIPT_GO_PACKAGE} -D\`.`);
-
-    throw new Error(message.join(os.EOL));
+async function assertTypeScriptGoExecutable(config: TypeScriptWorkerConfig) {
+  try {
+    await resolveTypeScriptGoBinPath(config);
+  } catch (error) {
+    throw createTypeScriptGoSupportError(config, error);
   }
 }
 
@@ -76,4 +95,4 @@ function assertTypeScriptSupport(config: TypeScriptWorkerConfig) {
   }
 }
 
-export { assertTypeScriptSupport };
+export { assertTypeScriptGoExecutable, assertTypeScriptSupport };

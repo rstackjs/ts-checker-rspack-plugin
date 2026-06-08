@@ -54,9 +54,11 @@ function tapDoneToAsyncGetIssues(
 
     debug(`Got ${issues?.length || 0} issues from getIssuesWorker.`);
 
+    let visibleIssues: Issue[];
+
     if (config.typescript.tsgo) {
       const internalIssues = issues.filter(isTypeScriptGoIssue);
-      let visibleIssues = issues.filter((issue) => !isTypeScriptGoIssue(issue));
+      visibleIssues = issues.filter((issue) => !isTypeScriptGoIssue(issue));
 
       // filter list of issues by provided issue predicate
       visibleIssues = visibleIssues.filter(config.issue.predicate);
@@ -67,17 +69,15 @@ function tapDoneToAsyncGetIssues(
       issues = internalIssues.concat(visibleIssues);
     } else {
       // filter list of issues by provided issue predicate
-      issues = issues.filter(config.issue.predicate);
+      visibleIssues = issues.filter(config.issue.predicate);
 
       // modify list of issues in the plugin hooks
-      issues = hooks.issues.call(issues, stats.compilation);
+      visibleIssues = hooks.issues.call(visibleIssues, stats.compilation);
+
+      issues = visibleIssues;
     }
 
     const formatter = createRspackFormatter(config.formatter.format, config.formatter.pathType);
-
-    const visibleIssues = config.typescript.tsgo
-      ? issues.filter((issue) => !isTypeScriptGoIssue(issue))
-      : issues;
 
     if (visibleIssues.length) {
       // follow Rspack's approach - one process.write to stderr with all errors and warnings
