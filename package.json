@@ -15,6 +15,7 @@
     "type": "git",
     "url": "https://github.com/rstackjs/ts-checker-rspack-plugin.git"
   },
+  "homepage": "https://github.com/rstackjs/ts-checker-rspack-plugin#readme",
   "license": "MIT",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
