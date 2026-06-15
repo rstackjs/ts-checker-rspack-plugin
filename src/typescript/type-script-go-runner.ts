@@ -59,6 +59,7 @@ function logOutput(logger: Pick<Logger, 'error'>, output: string) {
 }
 
 function stripAnsi(output: string) {
+  // rslint-disable-next-line no-control-regex
   return output.replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, '');
 }
 
