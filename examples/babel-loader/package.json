@@ -14,7 +14,7 @@
     "babel-loader": "^10.1.1",
     "ts-checker-rspack-plugin": "workspace:*",
     "typescript": "^6.0.3",
-    "@rspack/core": "^2.0.5",
-    "@rspack/cli": "^2.0.5"
+    "@rspack/core": "^2.0.8",
+    "@rspack/cli": "^2.0.8"
   }
 }
