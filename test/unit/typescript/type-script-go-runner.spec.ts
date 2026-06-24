@@ -1,10 +1,12 @@
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 import type { TypeScriptWorkerConfig } from 'src/typescript/type-script-worker-config';
 
 describe('typescript/type-script-go-runner', () => {
   const tsgoPackageJsonPath = require.resolve('@typescript/native-preview/package.json');
-  const projectContext = path.resolve('/project');
+  const projectContext = path.resolve('project');
   const config: TypeScriptWorkerConfig = {
     enabled: true,
     memoryLimit: 8192,
@@ -22,7 +24,41 @@ describe('typescript/type-script-go-runner', () => {
     profile: false,
     typescriptPath: tsgoPackageJsonPath,
     tsgo: true,
+    tsgoPackage: 'preview',
   };
+  const tempDirs: string[] = [];
+
+  function createTypeScriptPackage(version: string) {
+    const packagePath = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-checker-typescript-go-'));
+    const binDir = path.join(packagePath, 'bin');
+    const tscPath = path.join(binDir, 'tsc');
+
+    tempDirs.push(packagePath);
+    fs.mkdirSync(binDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(packagePath, 'package.json'),
+      JSON.stringify({
+        name: 'typescript',
+        version,
+        bin: {
+          tsc: 'bin/tsc',
+        },
+      }),
+    );
+    fs.writeFileSync(tscPath, '#!/usr/bin/env node\n');
+    fs.chmodSync(tscPath, 0o755);
+
+    return {
+      packageJsonPath: path.join(packagePath, 'package.json'),
+      tscPath,
+    };
+  }
+
+  afterEach(() => {
+    for (const tempDir of tempDirs.splice(0)) {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
 
   it('creates tsgo project args for regular checks', async () => {
     const { createTypeScriptGoArgs } = await import('src/typescript/type-script-go-runner');
@@ -80,6 +116,44 @@ describe('typescript/type-script-go-runner', () => {
         typescriptPath: '@typescript/native-preview/package.json',
       }),
     ).toThrowError('typescriptPath option must be an absolute path');
+  });
+
+  it('resolves tsc bin from supported TypeScript package', async () => {
+    const { packageJsonPath, tscPath } = createTypeScriptPackage('7.1.0');
+    const { resolveTypeScriptGoBinPath, resolveTypeScriptGoExecutable } =
+      await import('src/typescript/type-script-go-runner');
+
+    await expect(
+      resolveTypeScriptGoBinPath({
+        ...config,
+        typescriptPath: packageJsonPath,
+        tsgoPackage: 'typescript',
+      }),
+    ).resolves.toBe(tscPath);
+    await expect(
+      resolveTypeScriptGoExecutable({
+        ...config,
+        typescriptPath: packageJsonPath,
+        tsgoPackage: 'typescript',
+      }),
+    ).resolves.toEqual({
+      command: process.execPath,
+      args: [tscPath],
+    });
+  });
+
+  it('rejects tsgo package paths that were not classified by config', async () => {
+    const { packageJsonPath } = createTypeScriptPackage('6.0.3');
+    const { resolveTypeScriptGoPackageJsonPath } =
+      await import('src/typescript/type-script-go-runner');
+
+    expect(() =>
+      resolveTypeScriptGoPackageJsonPath({
+        ...config,
+        typescriptPath: packageJsonPath,
+        tsgoPackage: undefined,
+      }),
+    ).toThrowError('typescript@rc');
   });
 
   it('extracts the error count from tsgo summary output', async () => {

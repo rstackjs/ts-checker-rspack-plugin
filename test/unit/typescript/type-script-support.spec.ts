@@ -5,6 +5,30 @@ import type { TypeScriptWorkerConfig } from 'src/typescript/type-script-worker-c
 
 describe('typescript/type-script-support', () => {
   let configuration: TypeScriptWorkerConfig;
+  const tempDirs: string[] = [];
+
+  function createTypeScriptPackage(version: string) {
+    const packagePath = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-checker-typescript-support-'));
+    const binDir = path.join(packagePath, 'bin');
+    const tscPath = path.join(binDir, 'tsc');
+
+    tempDirs.push(packagePath);
+    fs.mkdirSync(binDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(packagePath, 'package.json'),
+      JSON.stringify({
+        name: 'typescript',
+        version,
+        bin: {
+          tsc: 'bin/tsc',
+        },
+      }),
+    );
+    fs.writeFileSync(tscPath, '#!/usr/bin/env node\n');
+    fs.chmodSync(tscPath, 0o755);
+
+    return path.join(packagePath, 'package.json');
+  }
 
   beforeEach(() => {
     rs.resetModules();
@@ -26,6 +50,12 @@ describe('typescript/type-script-support', () => {
       profile: false,
       typescriptPath: require.resolve('typescript'),
     };
+  });
+
+  afterEach(() => {
+    for (const tempDir of tempDirs.splice(0)) {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 
   it('throws error if typescript is not installed', async () => {
@@ -67,23 +97,58 @@ describe('typescript/type-script-support', () => {
     let error: Error | undefined;
 
     try {
+      const missingPackageJsonPath = path.join(
+        os.tmpdir(),
+        'ts-checker-native-preview-missing',
+        'package.json',
+      );
+
       assertTypeScriptSupport({
         ...configuration,
-        context: path.join(os.tmpdir(), 'ts-checker-native-preview-missing'),
-        typescriptPath: path.join(
-          os.tmpdir(),
-          'ts-checker-native-preview-missing/package.json'
-        ),
+        context: path.dirname(missingPackageJsonPath),
+        typescriptPath: missingPackageJsonPath,
         tsgo: true,
+        tsgoPackage: 'preview',
       });
     } catch (caughtError) {
       error = caughtError as Error;
     }
 
     expect(error?.message).toContain(
-      'When you enable TsCheckerRspackPlugin with `typescript.tsgo`, you must install `@typescript/native-preview` package.'
+      'When you enable TsCheckerRspackPlugin with `typescript.tsgo`, you must install `typescript@rc` or `@typescript/native-preview` package.'
     );
     expect(error?.message).toContain('If you set `typescript.typescriptPath`');
+  });
+
+  it('supports TypeScript package with tsc bin for tsgo', async () => {
+    const packageJsonPath = createTypeScriptPackage('7.1.0');
+    const { assertTypeScriptGoExecutable, assertTypeScriptSupport } = await import(
+      'src/typescript/type-script-support'
+    );
+    const config = {
+      ...configuration,
+      typescriptPath: packageJsonPath,
+      tsgo: true,
+      tsgoPackage: 'typescript',
+    };
+
+    expect(() => assertTypeScriptSupport(config)).not.toThrow();
+    await expect(assertTypeScriptGoExecutable(config)).resolves.toBeUndefined();
+  });
+
+  it('throws error if a package.json path is used without tsgo', async () => {
+    const packageJsonPath = createTypeScriptPackage('7.1.0');
+    const { assertTypeScriptSupport } = await import('src/typescript/type-script-support');
+
+    expect(() =>
+      assertTypeScriptSupport({
+        ...configuration,
+        typescriptPath: packageJsonPath,
+        tsgo: false,
+      })
+    ).toThrowError(
+      "When you use TsCheckerRspackPlugin without `typescript.tsgo`, `typescript.typescriptPath` should point to a path like `require.resolve('typescript')`."
+    );
   });
 
   it('does not print the typescriptPath hint for the default typescript-go path', async () => {
@@ -100,6 +165,7 @@ describe('typescript/type-script-support', () => {
         ...configuration,
         typescriptPath: require.resolve('@typescript/native-preview/package.json'),
         tsgo: true,
+        tsgoPackage: 'preview',
       });
     } catch (caughtError) {
       error = caughtError as Error;
@@ -108,7 +174,7 @@ describe('typescript/type-script-support', () => {
     }
 
     expect(error?.message).toContain(
-      'When you enable TsCheckerRspackPlugin with `typescript.tsgo`, you must install `@typescript/native-preview` package.'
+      'When you enable TsCheckerRspackPlugin with `typescript.tsgo`, you must install `typescript@rc` or `@typescript/native-preview` package.'
     );
     expect(error?.message).not.toContain('If you set `typescript.typescriptPath`');
   });
@@ -124,13 +190,14 @@ describe('typescript/type-script-support', () => {
         // optional peer dependency cannot be resolved, not a supported custom value.
         typescriptPath: '@typescript/native-preview/package.json',
         tsgo: true,
+        tsgoPackage: 'preview',
       });
     } catch (caughtError) {
       error = caughtError as Error;
     }
 
     expect(error?.message).toContain(
-      'When you enable TsCheckerRspackPlugin with `typescript.tsgo`, you must install `@typescript/native-preview` package.'
+      'When you enable TsCheckerRspackPlugin with `typescript.tsgo`, you must install `typescript@rc` or `@typescript/native-preview` package.'
     );
     expect(error?.message).not.toContain('If you set `typescript.typescriptPath`');
   });
@@ -154,6 +221,7 @@ describe('typescript/type-script-support', () => {
           ...configuration,
           typescriptPath: require.resolve('@typescript/native-preview/package.json'),
           tsgo: true,
+          tsgoPackage: 'preview',
         })
       ).rejects.toThrowError('Failed to resolve the tsgo executable: Executable not found');
     } finally {

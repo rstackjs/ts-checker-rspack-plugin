@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -8,10 +9,40 @@ import { AbortError } from '../utils/async/abort-error';
 
 import type { TypeScriptWorkerConfig } from './type-script-worker-config';
 import {
+  readTsgoPackageJson,
+  type TypeScriptGoPackageJson,
+} from './type-script-go-package';
+import {
   TYPESCRIPT_GO_ISSUE_CODE,
-  TYPESCRIPT_GO_PACKAGE,
-  TYPESCRIPT_GO_PACKAGE_JSON,
+  TYPESCRIPT_PACKAGE,
+  TYPESCRIPT_PREVIEW_PACKAGE,
+  TYPESCRIPT_PREVIEW_PACKAGE_JSON,
 } from './type-script-go-constants';
+
+type TypeScriptGoExecutable = {
+  command: string;
+  args: string[];
+};
+
+function resolvePackageBinPath(
+  packageJsonPath: string,
+  packageJson: TypeScriptGoPackageJson,
+  binName: string,
+): string {
+  const bin = typeof packageJson.bin === 'string' ? packageJson.bin : packageJson.bin?.[binName];
+
+  if (!bin) {
+    throw new Error(`Cannot resolve the "${binName}" executable from "${packageJsonPath}".`);
+  }
+
+  const binPath = path.resolve(path.dirname(packageJsonPath), bin);
+
+  if (!fs.existsSync(binPath)) {
+    throw new Error('Executable not found');
+  }
+
+  return binPath;
+}
 
 function resolveTypeScriptGoPackageJsonPath(config: TypeScriptWorkerConfig): string {
   if (
@@ -19,25 +50,72 @@ function resolveTypeScriptGoPackageJsonPath(config: TypeScriptWorkerConfig): str
     path.basename(config.typescriptPath) !== 'package.json'
   ) {
     throw new Error(
-      `The typescriptPath option must be an absolute path to "${TYPESCRIPT_GO_PACKAGE_JSON}" when tsgo is enabled.`,
+      `The typescriptPath option must be an absolute path to a package.json file when tsgo is enabled.`,
+    );
+  }
+
+  if (!config.tsgoPackage) {
+    throw new Error(
+      `The typescriptPath option must point to "${TYPESCRIPT_PREVIEW_PACKAGE_JSON}" or "${TYPESCRIPT_PACKAGE}@rc".`,
     );
   }
 
   return config.typescriptPath;
 }
 
-async function resolveTypeScriptGoBinPath(config: TypeScriptWorkerConfig): Promise<string> {
-  const tsgoPkgPath = resolveTypeScriptGoPackageJsonPath(config);
-  const getExePathPath = path.resolve(path.dirname(tsgoPkgPath), './lib/getExePath.js');
+async function resolveTypeScriptPreviewBinPath(packageJsonPath: string): Promise<string> {
+  const getExePathPath = path.resolve(path.dirname(packageJsonPath), './lib/getExePath.js');
   const getExePathUrl = pathToFileURL(getExePathPath).href;
   const getExePathModule = await import(getExePathUrl);
   const getExePath = getExePathModule.default || getExePathModule.getExePath;
 
   if (typeof getExePath !== 'function') {
-    throw new Error(`Cannot resolve the typescript-go executable from "${TYPESCRIPT_GO_PACKAGE}".`);
+    throw new Error(
+      `Cannot resolve the typescript-go executable from "${TYPESCRIPT_PREVIEW_PACKAGE}".`,
+    );
   }
 
   return getExePath();
+}
+
+async function resolveTypeScriptGoBinPath(config: TypeScriptWorkerConfig): Promise<string> {
+  const packageJsonPath = resolveTypeScriptGoPackageJsonPath(config);
+
+  if (config.tsgoPackage === 'typescript') {
+    return resolvePackageBinPath(
+      packageJsonPath,
+      readTsgoPackageJson(packageJsonPath),
+      'tsc',
+    );
+  }
+
+  return resolveTypeScriptPreviewBinPath(packageJsonPath);
+}
+
+async function resolveTypeScriptGoExecutable(
+  config: TypeScriptWorkerConfig,
+): Promise<TypeScriptGoExecutable> {
+  const packageJsonPath = resolveTypeScriptGoPackageJsonPath(config);
+
+  if (config.tsgoPackage === 'typescript') {
+    const binPath = resolvePackageBinPath(
+      packageJsonPath,
+      readTsgoPackageJson(packageJsonPath),
+      'tsc',
+    );
+
+    return {
+      command: process.execPath,
+      args: [binPath],
+    };
+  }
+
+  const binPath = await resolveTypeScriptPreviewBinPath(packageJsonPath);
+
+  return {
+    command: binPath,
+    args: [],
+  };
 }
 
 function createTypeScriptGoArgs(config: TypeScriptWorkerConfig) {
@@ -218,13 +296,13 @@ async function runTypeScriptGo(
 ): Promise<Issue[]> {
   AbortError.throwIfAborted(signal);
 
-  const binPath = await resolveTypeScriptGoBinPath(config);
+  const executable = await resolveTypeScriptGoExecutable(config);
   const args = createTypeScriptGoArgs(config);
 
   return new Promise((resolve, reject) => {
     let settled = false;
     let output = '';
-    const childProcess = spawn(binPath, args, {
+    const childProcess = spawn(executable.command, [...executable.args, ...args], {
       cwd: config.context,
       stdio: ['inherit', 'pipe', 'pipe'],
     });
@@ -312,7 +390,9 @@ export {
   isTypeScriptGoIssue,
   isTypeScriptGoStatsError,
   parseTypeScriptGoIssues,
+  resolveTypeScriptGoExecutable,
   resolveTypeScriptGoBinPath,
+  resolvePackageBinPath,
   resolveTypeScriptGoPackageJsonPath,
   runTypeScriptGo,
 };

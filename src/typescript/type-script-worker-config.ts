@@ -4,7 +4,15 @@ import type * as rspack from '@rspack/core';
 
 import type { TypeScriptConfigOverwrite } from './type-script-config-overwrite';
 import type { TypeScriptDiagnosticsOptions } from './type-script-diagnostics-options';
-import { TYPESCRIPT_GO_PACKAGE_JSON } from './type-script-go-constants';
+import {
+  type ResolvedTypeScriptGoPackage,
+  resolveTypeScriptGoPackage,
+  type TypeScriptGoPackage,
+} from './type-script-go-package';
+import {
+  TYPESCRIPT_PACKAGE_JSON,
+  TYPESCRIPT_PREVIEW_PACKAGE_JSON,
+} from './type-script-go-constants';
 import type { TypeScriptWorkerOptions } from './type-script-worker-options';
 
 interface TypeScriptWorkerConfig {
@@ -19,18 +27,82 @@ interface TypeScriptWorkerConfig {
   profile: boolean;
   typescriptPath: string;
   tsgo?: boolean;
+  tsgoPackage?: TypeScriptGoPackage;
 }
 
-function resolveDefaultTypeScriptPath(tsgo?: boolean): string {
-  if (tsgo === true) {
-    try {
-      return require.resolve(TYPESCRIPT_GO_PACKAGE_JSON);
-    } catch {
-      return TYPESCRIPT_GO_PACKAGE_JSON;
+type TypeScriptRuntimeConfig = Pick<
+  TypeScriptWorkerConfig,
+  'typescriptPath' | 'tsgo' | 'tsgoPackage'
+>;
+
+function resolveInstalledTypeScriptPackageForTsgo(): ResolvedTypeScriptGoPackage | undefined {
+  try {
+    const packageJsonPath = require.resolve(TYPESCRIPT_PACKAGE_JSON);
+    const tsgoPackage = resolveTypeScriptGoPackage(packageJsonPath);
+
+    if (tsgoPackage?.tsgoPackage === 'typescript') {
+      return tsgoPackage;
     }
+  } catch {
+    // silent catch
   }
 
-  return require.resolve('typescript');
+  return undefined;
+}
+
+function resolveDefaultPreviewPackageJsonPath(): string {
+  try {
+    return require.resolve(TYPESCRIPT_PREVIEW_PACKAGE_JSON);
+  } catch {
+    return TYPESCRIPT_PREVIEW_PACKAGE_JSON;
+  }
+}
+
+function resolveTypeScriptRuntimeConfig(
+  options: Exclude<TypeScriptWorkerOptions, boolean>,
+): TypeScriptRuntimeConfig {
+  if (options.typescriptPath) {
+    const tsgoPackage = resolveTypeScriptGoPackage(options.typescriptPath);
+    const tsgo =
+      options.tsgo === undefined && tsgoPackage?.tsgoPackage === 'typescript'
+        ? true
+        : options.tsgo;
+
+    return {
+      typescriptPath: options.typescriptPath,
+      ...(tsgo === undefined ? {} : { tsgo }),
+      ...(tsgo === true && tsgoPackage ? { tsgoPackage: tsgoPackage.tsgoPackage } : {}),
+    };
+  }
+
+  if (options.tsgo === false) {
+    return {
+      typescriptPath: require.resolve('typescript'),
+      tsgo: false,
+    };
+  }
+
+  const installedTypeScriptTsgoPackage = resolveInstalledTypeScriptPackageForTsgo();
+
+  if (installedTypeScriptTsgoPackage) {
+    return {
+      typescriptPath: installedTypeScriptTsgoPackage.packageJsonPath,
+      tsgo: true,
+      tsgoPackage: 'typescript',
+    };
+  }
+
+  if (options.tsgo === true) {
+    return {
+      typescriptPath: resolveDefaultPreviewPackageJsonPath(),
+      tsgo: true,
+      tsgoPackage: 'preview',
+    };
+  }
+
+  return {
+    typescriptPath: require.resolve('typescript'),
+  };
 }
 
 function createTypeScriptWorkerConfig(
@@ -49,9 +121,7 @@ function createTypeScriptWorkerConfig(
 
   const optionsAsObject: Exclude<TypeScriptWorkerOptions, boolean> =
     typeof options === 'object' ? options : {};
-
-  const typescriptPath =
-    optionsAsObject.typescriptPath || resolveDefaultTypeScriptPath(optionsAsObject.tsgo);
+  const typescriptRuntimeConfig = resolveTypeScriptRuntimeConfig(optionsAsObject);
 
   return {
     enabled: Boolean(options) || options === undefined,
@@ -60,6 +130,7 @@ function createTypeScriptWorkerConfig(
     mode: optionsAsObject.build ? 'write-tsbuildinfo' : 'readonly',
     profile: false,
     ...optionsAsObject,
+    ...typescriptRuntimeConfig,
     configFile: configFile,
     configOverwrite: optionsAsObject.configOverwrite || {},
     context: optionsAsObject.context || path.dirname(configFile),
@@ -70,10 +141,11 @@ function createTypeScriptWorkerConfig(
       global: false,
       ...(optionsAsObject.diagnosticOptions || {}),
     },
-    typescriptPath,
   };
 }
 
-export { createTypeScriptWorkerConfig };
+export {
+  createTypeScriptWorkerConfig,
+};
 
 export type { TypeScriptWorkerConfig };
