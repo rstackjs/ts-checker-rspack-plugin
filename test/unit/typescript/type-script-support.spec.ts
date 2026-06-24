@@ -26,8 +26,9 @@ describe('typescript/type-script-support', () => {
     );
     fs.writeFileSync(
       path.join(libDir, 'getExePath.js'),
-      `module.exports = function getExePath() { return ${JSON.stringify(nativeTscPath)}; };\n`,
+      "module.exports = function getExePath() { return require('./nativeTscPath.json'); };\n",
     );
+    fs.writeFileSync(path.join(libDir, 'nativeTscPath.json'), JSON.stringify(nativeTscPath));
     fs.writeFileSync(nativeTscPath, '#!/usr/bin/env node\n');
     fs.chmodSync(nativeTscPath, 0o755);
 
