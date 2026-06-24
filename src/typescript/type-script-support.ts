@@ -14,7 +14,6 @@ import {
   TYPESCRIPT_PREVIEW_PACKAGE_JSON,
 } from './type-script-go-constants';
 import {
-  resolvePackageBinPath,
   resolveTypeScriptGoBinPath,
   resolveTypeScriptGoPackageJsonPath,
 } from './type-script-go-runner';
@@ -71,22 +70,13 @@ function createTypeScriptGoSupportError(config: TypeScriptWorkerConfig, error?: 
 function assertTypeScriptGoSupport(config: TypeScriptWorkerConfig) {
   try {
     const tsgoPackageJsonPath = resolveTypeScriptGoPackageJsonPath(config);
+    const getExePathPath = path.resolve(
+      path.dirname(tsgoPackageJsonPath),
+      './lib/getExePath.js',
+    );
 
-    if (config.tsgoPackage === 'preview') {
-      const getExePathPath = path.resolve(
-        path.dirname(tsgoPackageJsonPath),
-        './lib/getExePath.js',
-      );
-
-      if (!fs.existsSync(getExePathPath)) {
-        throw new Error();
-      }
-    } else if (config.tsgoPackage === 'typescript') {
-      resolvePackageBinPath(
-        tsgoPackageJsonPath,
-        readTsgoPackageJson(tsgoPackageJsonPath),
-        'tsc',
-      );
+    if (!fs.existsSync(getExePathPath)) {
+      throw new Error();
     }
   } catch (error) {
     throw createTypeScriptGoSupportError(config, error);

@@ -30,11 +30,11 @@ describe('typescript/type-script-go-runner', () => {
 
   function createTypeScriptPackage(version: string) {
     const packagePath = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-checker-typescript-go-'));
-    const binDir = path.join(packagePath, 'bin');
-    const tscPath = path.join(binDir, 'tsc');
+    const libDir = path.join(packagePath, 'lib');
+    const nativeTscPath = path.join(libDir, 'tsc');
 
     tempDirs.push(packagePath);
-    fs.mkdirSync(binDir, { recursive: true });
+    fs.mkdirSync(libDir, { recursive: true });
     fs.writeFileSync(
       path.join(packagePath, 'package.json'),
       JSON.stringify({
@@ -45,12 +45,16 @@ describe('typescript/type-script-go-runner', () => {
         },
       }),
     );
-    fs.writeFileSync(tscPath, '#!/usr/bin/env node\n');
-    fs.chmodSync(tscPath, 0o755);
+    fs.writeFileSync(
+      path.join(libDir, 'getExePath.js'),
+      `module.exports = function getExePath() { return ${JSON.stringify(nativeTscPath)}; };\n`,
+    );
+    fs.writeFileSync(nativeTscPath, '#!/usr/bin/env node\n');
+    fs.chmodSync(nativeTscPath, 0o755);
 
     return {
       packageJsonPath: path.join(packagePath, 'package.json'),
-      tscPath,
+      nativeTscPath,
     };
   }
 
@@ -118,8 +122,8 @@ describe('typescript/type-script-go-runner', () => {
     ).toThrowError('typescriptPath option must be an absolute path');
   });
 
-  it('resolves tsc bin from supported TypeScript package', async () => {
-    const { packageJsonPath, tscPath } = createTypeScriptPackage('7.1.0');
+  it('resolves native executable from supported TypeScript package', async () => {
+    const { packageJsonPath, nativeTscPath } = createTypeScriptPackage('7.1.0');
     const { resolveTypeScriptGoBinPath, resolveTypeScriptGoExecutable } =
       await import('src/typescript/type-script-go-runner');
 
@@ -129,7 +133,7 @@ describe('typescript/type-script-go-runner', () => {
         typescriptPath: packageJsonPath,
         tsgoPackage: 'typescript',
       }),
-    ).resolves.toBe(tscPath);
+    ).resolves.toBe(nativeTscPath);
     await expect(
       resolveTypeScriptGoExecutable({
         ...config,
@@ -137,8 +141,8 @@ describe('typescript/type-script-go-runner', () => {
         tsgoPackage: 'typescript',
       }),
     ).resolves.toEqual({
-      command: process.execPath,
-      args: [tscPath],
+      command: nativeTscPath,
+      args: [],
     });
   });
 

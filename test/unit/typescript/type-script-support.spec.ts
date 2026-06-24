@@ -9,11 +9,11 @@ describe('typescript/type-script-support', () => {
 
   function createTypeScriptPackage(version: string) {
     const packagePath = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-checker-typescript-support-'));
-    const binDir = path.join(packagePath, 'bin');
-    const tscPath = path.join(binDir, 'tsc');
+    const libDir = path.join(packagePath, 'lib');
+    const nativeTscPath = path.join(libDir, 'tsc');
 
     tempDirs.push(packagePath);
-    fs.mkdirSync(binDir, { recursive: true });
+    fs.mkdirSync(libDir, { recursive: true });
     fs.writeFileSync(
       path.join(packagePath, 'package.json'),
       JSON.stringify({
@@ -24,8 +24,12 @@ describe('typescript/type-script-support', () => {
         },
       }),
     );
-    fs.writeFileSync(tscPath, '#!/usr/bin/env node\n');
-    fs.chmodSync(tscPath, 0o755);
+    fs.writeFileSync(
+      path.join(libDir, 'getExePath.js'),
+      `module.exports = function getExePath() { return ${JSON.stringify(nativeTscPath)}; };\n`,
+    );
+    fs.writeFileSync(nativeTscPath, '#!/usr/bin/env node\n');
+    fs.chmodSync(nativeTscPath, 0o755);
 
     return path.join(packagePath, 'package.json');
   }
@@ -120,7 +124,7 @@ describe('typescript/type-script-support', () => {
     expect(error?.message).toContain('If you set `typescript.typescriptPath`');
   });
 
-  it('supports TypeScript package with tsc bin for tsgo', async () => {
+  it('supports TypeScript package with native executable for tsgo', async () => {
     const packageJsonPath = createTypeScriptPackage('7.1.0');
     const { assertTypeScriptGoExecutable, assertTypeScriptSupport } = await import(
       'src/typescript/type-script-support'

@@ -121,7 +121,7 @@ Options for the TypeScript checker (`typescript` option object).
 
 `typescript.tsgo` can reduce type-checking time by about 5-10x, especially on large projects, by using the Go implementation of TypeScript. It enables experimental [typescript-go](https://github.com/microsoft/typescript-go) support through TypeScript 7+ or [`@typescript/native-preview`](https://www.npmjs.com/package/@typescript/native-preview).
 
-When the configured or default installed `typescript` package is major version 7 or higher, the plugin enables `typescript.tsgo` automatically and runs the `tsc` bin from that package. When `typescript.tsgo: true` is set without a custom `typescriptPath` and TypeScript 7+ is not installed, the plugin falls back to `@typescript/native-preview`.
+When the configured or default installed `typescript` package is major version 7 or higher, the plugin enables `typescript.tsgo` automatically and runs the TypeScript Go executable from that package. When `typescript.tsgo: true` is set without a custom `typescriptPath` and TypeScript 7+ is not installed, the plugin falls back to `@typescript/native-preview`.
 
 In this mode, the plugin runs the TypeScript Go binary in a child process, parses its diagnostics, and reports them through the existing issue formatter when possible. If the output cannot be parsed safely, the raw output is printed and the build fails when it exits with errors.
 

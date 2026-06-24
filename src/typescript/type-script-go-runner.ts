@@ -9,10 +9,6 @@ import { AbortError } from '../utils/async/abort-error';
 
 import type { TypeScriptWorkerConfig } from './type-script-worker-config';
 import {
-  readTsgoPackageJson,
-  type TypeScriptGoPackageJson,
-} from './type-script-go-package';
-import {
   TYPESCRIPT_GO_ISSUE_CODE,
   TYPESCRIPT_PACKAGE,
   TYPESCRIPT_PREVIEW_PACKAGE,
@@ -23,26 +19,6 @@ type TypeScriptGoExecutable = {
   command: string;
   args: string[];
 };
-
-function resolvePackageBinPath(
-  packageJsonPath: string,
-  packageJson: TypeScriptGoPackageJson,
-  binName: string,
-): string {
-  const bin = typeof packageJson.bin === 'string' ? packageJson.bin : packageJson.bin?.[binName];
-
-  if (!bin) {
-    throw new Error(`Cannot resolve the "${binName}" executable from "${packageJsonPath}".`);
-  }
-
-  const binPath = path.resolve(path.dirname(packageJsonPath), bin);
-
-  if (!fs.existsSync(binPath)) {
-    throw new Error('Executable not found');
-  }
-
-  return binPath;
-}
 
 function resolveTypeScriptGoPackageJsonPath(config: TypeScriptWorkerConfig): string {
   if (
@@ -63,7 +39,10 @@ function resolveTypeScriptGoPackageJsonPath(config: TypeScriptWorkerConfig): str
   return config.typescriptPath;
 }
 
-async function resolveTypeScriptPreviewBinPath(packageJsonPath: string): Promise<string> {
+async function resolveTypeScriptGoNativeExecutablePath(
+  packageJsonPath: string,
+  packageName: string,
+): Promise<string> {
   const getExePathPath = path.resolve(path.dirname(packageJsonPath), './lib/getExePath.js');
   const getExePathUrl = pathToFileURL(getExePathPath).href;
   const getExePathModule = await import(getExePathUrl);
@@ -71,46 +50,33 @@ async function resolveTypeScriptPreviewBinPath(packageJsonPath: string): Promise
 
   if (typeof getExePath !== 'function') {
     throw new Error(
-      `Cannot resolve the typescript-go executable from "${TYPESCRIPT_PREVIEW_PACKAGE}".`,
+      `Cannot resolve the typescript-go executable from "${packageName}".`,
     );
   }
 
-  return getExePath();
+  const executablePath = getExePath();
+
+  if (typeof executablePath !== 'string' || !fs.existsSync(executablePath)) {
+    throw new Error('Executable not found');
+  }
+
+  return executablePath;
 }
 
 async function resolveTypeScriptGoBinPath(config: TypeScriptWorkerConfig): Promise<string> {
   const packageJsonPath = resolveTypeScriptGoPackageJsonPath(config);
 
   if (config.tsgoPackage === 'typescript') {
-    return resolvePackageBinPath(
-      packageJsonPath,
-      readTsgoPackageJson(packageJsonPath),
-      'tsc',
-    );
+    return resolveTypeScriptGoNativeExecutablePath(packageJsonPath, TYPESCRIPT_PACKAGE);
   }
 
-  return resolveTypeScriptPreviewBinPath(packageJsonPath);
+  return resolveTypeScriptGoNativeExecutablePath(packageJsonPath, TYPESCRIPT_PREVIEW_PACKAGE);
 }
 
 async function resolveTypeScriptGoExecutable(
   config: TypeScriptWorkerConfig,
 ): Promise<TypeScriptGoExecutable> {
-  const packageJsonPath = resolveTypeScriptGoPackageJsonPath(config);
-
-  if (config.tsgoPackage === 'typescript') {
-    const binPath = resolvePackageBinPath(
-      packageJsonPath,
-      readTsgoPackageJson(packageJsonPath),
-      'tsc',
-    );
-
-    return {
-      command: process.execPath,
-      args: [binPath],
-    };
-  }
-
-  const binPath = await resolveTypeScriptPreviewBinPath(packageJsonPath);
+  const binPath = await resolveTypeScriptGoBinPath(config);
 
   return {
     command: binPath,
@@ -392,7 +358,6 @@ export {
   parseTypeScriptGoIssues,
   resolveTypeScriptGoExecutable,
   resolveTypeScriptGoBinPath,
-  resolvePackageBinPath,
   resolveTypeScriptGoPackageJsonPath,
   runTypeScriptGo,
 };
