@@ -10,6 +10,7 @@ type TypeScriptWorkerOptions = {
   mode?: 'readonly' | 'write-tsbuildinfo' | 'write-dts' | 'write-references';
   diagnosticOptions?: Partial<TypeScriptDiagnosticsOptions>;
   profile?: boolean;
+  resolveRoot?: string;
   typescriptPath?: string;
   tsgo?: boolean;
 };
