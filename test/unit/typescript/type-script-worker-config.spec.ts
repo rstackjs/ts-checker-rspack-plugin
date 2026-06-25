@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 import type { TypeScriptWorkerConfig } from 'src/typescript/type-script-worker-config';
@@ -6,7 +8,12 @@ import type * as rspack from '@rspack/core';
 
 describe('typescript/type-scripts-worker-config', () => {
   let compiler: rspack.Compiler;
-  const context = '/webpack/context';
+  const context = path.resolve('webpack-context');
+  const customPreviewPackageJsonPath = path.resolve(
+    'custom',
+    'native-preview',
+    'package.json',
+  );
 
   const configuration: TypeScriptWorkerConfig = {
     enabled: true,
@@ -28,8 +35,31 @@ describe('typescript/type-scripts-worker-config', () => {
   const tsgoConfiguration: TypeScriptWorkerConfig = {
     ...configuration,
     tsgo: true,
+    tsgoPackage: 'preview',
     typescriptPath: require.resolve('@typescript/native-preview/package.json'),
   };
+  const tempDirs: string[] = [];
+
+  function createTypeScriptPackage(version: string) {
+    const packagePath = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-checker-typescript-config-'));
+    const binDir = path.join(packagePath, 'bin');
+
+    tempDirs.push(packagePath);
+    fs.mkdirSync(binDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(packagePath, 'package.json'),
+      JSON.stringify({
+        name: 'typescript',
+        version,
+        bin: {
+          tsc: 'bin/tsc',
+        },
+      }),
+    );
+    fs.writeFileSync(path.join(binDir, 'tsc'), '#!/usr/bin/env node\n');
+
+    return path.join(packagePath, 'package.json');
+  }
 
   beforeEach(() => {
     compiler = {
@@ -40,6 +70,9 @@ describe('typescript/type-scripts-worker-config', () => {
   });
   afterEach(() => {
     rs.resetModules();
+    for (const tempDir of tempDirs.splice(0)) {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 
   it.each([
@@ -84,10 +117,11 @@ describe('typescript/type-scripts-worker-config', () => {
     [{ profile: true }, { ...configuration, profile: true }],
     [{ tsgo: true }, tsgoConfiguration],
     [
-      { tsgo: true, typescriptPath: '/custom/native-preview/package.json' },
+      { tsgo: true, typescriptPath: customPreviewPackageJsonPath },
       {
-        ...tsgoConfiguration,
-        typescriptPath: '/custom/native-preview/package.json',
+        ...configuration,
+        tsgo: true,
+        typescriptPath: customPreviewPackageJsonPath,
       },
     ],
   ])('creates configuration from options %p', async (options, expectedConfig) => {
@@ -97,5 +131,90 @@ describe('typescript/type-scripts-worker-config', () => {
     const config = createTypeScriptWorkerConfig(compiler, options as TypeScriptWorkerOptions);
 
     expect(config).toEqual(expectedConfig);
+  });
+
+  it('infers tsgo from the default TypeScript package only when tsgo is not configured', async () => {
+    const packageJsonPath = require.resolve('typescript/package.json');
+    const packageModule = await import('src/typescript/type-script-go-package');
+    const resolveTypeScriptGoPackageSpy = rs
+      .spyOn(packageModule, 'resolveTypeScriptGoPackage')
+      .mockImplementation((resolvedPackageJsonPath: string) => ({
+        packageJsonPath: resolvedPackageJsonPath,
+        tsgoPackage: 'typescript',
+      }));
+
+    try {
+      const { createTypeScriptWorkerConfig } = await import(
+        'src/typescript/type-script-worker-config'
+      );
+
+      expect(createTypeScriptWorkerConfig(compiler, {})).toEqual({
+        ...configuration,
+        tsgo: true,
+        tsgoPackage: 'typescript',
+        typescriptPath: packageJsonPath,
+      });
+      expect(createTypeScriptWorkerConfig(compiler, { tsgo: false })).toEqual({
+        ...configuration,
+        tsgo: false,
+      });
+    } finally {
+      resolveTypeScriptGoPackageSpy.mockRestore();
+    }
+  });
+
+  it('infers tsgo when typescriptPath points to supported TypeScript package', async () => {
+    const packageJsonPath = createTypeScriptPackage('7.1.0');
+    const { createTypeScriptWorkerConfig } = await import(
+      'src/typescript/type-script-worker-config'
+    );
+
+    expect(
+      createTypeScriptWorkerConfig(compiler, {
+        typescriptPath: packageJsonPath,
+      })
+    ).toEqual({
+      ...configuration,
+      tsgo: true,
+      tsgoPackage: 'typescript',
+      typescriptPath: packageJsonPath,
+    });
+  });
+
+  it('uses configured TypeScript package path when tsgo is explicitly enabled', async () => {
+    const packageJsonPath = createTypeScriptPackage('7.1.0');
+    const { createTypeScriptWorkerConfig } = await import(
+      'src/typescript/type-script-worker-config'
+    );
+
+    expect(
+      createTypeScriptWorkerConfig(compiler, {
+        tsgo: true,
+        typescriptPath: packageJsonPath,
+      })
+    ).toEqual({
+      ...configuration,
+      tsgo: true,
+      tsgoPackage: 'typescript',
+      typescriptPath: packageJsonPath,
+    });
+  });
+
+  it('does not infer tsgo from configured TypeScript package path when tsgo is disabled', async () => {
+    const packageJsonPath = createTypeScriptPackage('7.1.0');
+    const { createTypeScriptWorkerConfig } = await import(
+      'src/typescript/type-script-worker-config'
+    );
+
+    expect(
+      createTypeScriptWorkerConfig(compiler, {
+        tsgo: false,
+        typescriptPath: packageJsonPath,
+      })
+    ).toEqual({
+      ...configuration,
+      tsgo: false,
+      typescriptPath: packageJsonPath,
+    });
   });
 });
