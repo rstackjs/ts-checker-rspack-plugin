@@ -161,7 +161,7 @@ new TsCheckerRspackPlugin({
 });
 ```
 
-> The `@typescript/native-preview` usage is kept only for compatibility. We recommend installing `typescript@rc` to use `tsgo`.
+> The `@typescript/native-preview` usage is deprecated and kept only for compatibility. We recommend installing `typescript@rc` to use `tsgo`.
 
 Limitations:
 
