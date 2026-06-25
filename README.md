@@ -161,6 +161,8 @@ new TsCheckerRspackPlugin({
 });
 ```
 
+> The `@typescript/native-preview` usage is kept only for compatibility. We recommend installing `typescript@rc` to use `tsgo`.
+
 Limitations:
 
 - `issue.include`, `issue.exclude`, and `issue.defaultSeverity` only apply to diagnostics whose `tsgo` output can be matched by `file`, `line`, `column`, `code`, and `message`.
