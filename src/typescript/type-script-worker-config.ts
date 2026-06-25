@@ -42,7 +42,7 @@ function resolveModule(request: string, resolveRoot?: string): string {
     : require.resolve(request);
 }
 
-function resolveInstalledTypeScriptPackageForTsgo(
+function resolveInstalledTsgoPackage(
   resolveRoot?: string,
 ): ResolvedTypeScriptGoPackage | undefined {
   try {
@@ -91,13 +91,11 @@ function resolveTypeScriptRuntimeConfig(
     };
   }
 
-  const installedTypeScriptTsgoPackage = resolveInstalledTypeScriptPackageForTsgo(
-    options.resolveRoot,
-  );
+  const installedTsgoPackage = resolveInstalledTsgoPackage(options.resolveRoot);
 
-  if (installedTypeScriptTsgoPackage) {
+  if (installedTsgoPackage) {
     return {
-      typescriptPath: installedTypeScriptTsgoPackage.packageJsonPath,
+      typescriptPath: installedTsgoPackage.packageJsonPath,
       tsgo: true,
       tsgoPackage: 'typescript',
     };
