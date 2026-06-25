@@ -133,11 +133,9 @@ function createTypeScriptWorkerConfig(
   const optionsAsObject: Exclude<TypeScriptWorkerOptions, boolean> =
     typeof options === 'object' ? options : {};
   const resolveRoot = optionsAsObject.resolveRoot
-    ? path.normalize(
-        path.isAbsolute(optionsAsObject.resolveRoot)
-          ? optionsAsObject.resolveRoot
-          : path.resolve(compiler.options.context || process.cwd(), optionsAsObject.resolveRoot),
-      )
+    ? path.isAbsolute(optionsAsObject.resolveRoot)
+      ? optionsAsObject.resolveRoot
+      : path.resolve(compiler.options.context || process.cwd(), optionsAsObject.resolveRoot)
     : undefined;
   const normalizedOptions = {
     ...optionsAsObject,
