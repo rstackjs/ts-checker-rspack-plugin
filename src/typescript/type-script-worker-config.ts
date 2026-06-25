@@ -25,6 +25,7 @@ interface TypeScriptWorkerConfig {
   mode: 'readonly' | 'write-dts' | 'write-tsbuildinfo' | 'write-references';
   diagnosticOptions: TypeScriptDiagnosticsOptions;
   profile: boolean;
+  resolveRoot?: string;
   typescriptPath: string;
   tsgo?: boolean;
   tsgoPackage?: TypeScriptGoPackage;
@@ -35,9 +36,17 @@ type TypeScriptRuntimeConfig = Pick<
   'typescriptPath' | 'tsgo' | 'tsgoPackage'
 >;
 
-function resolveInstalledTypeScriptPackageForTsgo(): ResolvedTypeScriptGoPackage | undefined {
+function resolveModule(request: string, resolveRoot?: string): string {
+  return resolveRoot
+    ? require.resolve(request, { paths: [resolveRoot] })
+    : require.resolve(request);
+}
+
+function resolveInstalledTsgoPackage(
+  resolveRoot?: string,
+): ResolvedTypeScriptGoPackage | undefined {
   try {
-    const packageJsonPath = require.resolve(TYPESCRIPT_PACKAGE_JSON);
+    const packageJsonPath = resolveModule(TYPESCRIPT_PACKAGE_JSON, resolveRoot);
     const tsgoPackage = resolveTypeScriptGoPackage(packageJsonPath);
 
     if (tsgoPackage?.tsgoPackage === 'typescript') {
@@ -50,9 +59,9 @@ function resolveInstalledTypeScriptPackageForTsgo(): ResolvedTypeScriptGoPackage
   return undefined;
 }
 
-function resolveDefaultPreviewPackageJsonPath(): string {
+function resolveDefaultPreviewPackageJsonPath(resolveRoot?: string): string {
   try {
-    return require.resolve(TYPESCRIPT_PREVIEW_PACKAGE_JSON);
+    return resolveModule(TYPESCRIPT_PREVIEW_PACKAGE_JSON, resolveRoot);
   } catch {
     return TYPESCRIPT_PREVIEW_PACKAGE_JSON;
   }
@@ -77,16 +86,16 @@ function resolveTypeScriptRuntimeConfig(
 
   if (options.tsgo === false) {
     return {
-      typescriptPath: require.resolve('typescript'),
+      typescriptPath: resolveModule('typescript', options.resolveRoot),
       tsgo: false,
     };
   }
 
-  const installedTypeScriptTsgoPackage = resolveInstalledTypeScriptPackageForTsgo();
+  const installedTsgoPackage = resolveInstalledTsgoPackage(options.resolveRoot);
 
-  if (installedTypeScriptTsgoPackage) {
+  if (installedTsgoPackage) {
     return {
-      typescriptPath: installedTypeScriptTsgoPackage.packageJsonPath,
+      typescriptPath: installedTsgoPackage.packageJsonPath,
       tsgo: true,
       tsgoPackage: 'typescript',
     };
@@ -94,14 +103,14 @@ function resolveTypeScriptRuntimeConfig(
 
   if (options.tsgo === true) {
     return {
-      typescriptPath: resolveDefaultPreviewPackageJsonPath(),
+      typescriptPath: resolveDefaultPreviewPackageJsonPath(options.resolveRoot),
       tsgo: true,
       tsgoPackage: 'preview',
     };
   }
 
   return {
-    typescriptPath: require.resolve('typescript'),
+    typescriptPath: resolveModule('typescript', options.resolveRoot),
   };
 }
 
@@ -121,7 +130,16 @@ function createTypeScriptWorkerConfig(
 
   const optionsAsObject: Exclude<TypeScriptWorkerOptions, boolean> =
     typeof options === 'object' ? options : {};
-  const typescriptRuntimeConfig = resolveTypeScriptRuntimeConfig(optionsAsObject);
+  const resolveRoot = optionsAsObject.resolveRoot
+    ? path.isAbsolute(optionsAsObject.resolveRoot)
+      ? optionsAsObject.resolveRoot
+      : path.resolve(compiler.options.context || process.cwd(), optionsAsObject.resolveRoot)
+    : undefined;
+  const normalizedOptions = {
+    ...optionsAsObject,
+    ...(resolveRoot ? { resolveRoot } : {}),
+  };
+  const typescriptRuntimeConfig = resolveTypeScriptRuntimeConfig(normalizedOptions);
 
   return {
     enabled: Boolean(options) || options === undefined,
@@ -129,17 +147,17 @@ function createTypeScriptWorkerConfig(
     build: false,
     mode: optionsAsObject.build ? 'write-tsbuildinfo' : 'readonly',
     profile: false,
-    ...optionsAsObject,
+    ...normalizedOptions,
     ...typescriptRuntimeConfig,
     configFile: configFile,
-    configOverwrite: optionsAsObject.configOverwrite || {},
-    context: optionsAsObject.context || path.dirname(configFile),
+    configOverwrite: normalizedOptions.configOverwrite || {},
+    context: normalizedOptions.context || path.dirname(configFile),
     diagnosticOptions: {
       syntactic: false, // by default they are reported by the loader
       semantic: true,
       declaration: false,
       global: false,
-      ...(optionsAsObject.diagnosticOptions || {}),
+      ...(normalizedOptions.diagnosticOptions || {}),
     },
   };
 }

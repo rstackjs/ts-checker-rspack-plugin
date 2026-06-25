@@ -40,23 +40,42 @@ describe('typescript/type-scripts-worker-config', () => {
   };
   const tempDirs: string[] = [];
 
-  function createTypeScriptPackage(version: string) {
-    const packagePath = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-checker-typescript-config-'));
-    const binDir = path.join(packagePath, 'bin');
+  function createResolveRoot() {
+    const resolveRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-checker-resolve-root-'));
 
-    tempDirs.push(packagePath);
+    tempDirs.push(resolveRoot);
+
+    return resolveRoot;
+  }
+
+  function createTypeScriptPackage(version: string, resolveRoot?: string) {
+    const packagePath = resolveRoot
+      ? path.join(resolveRoot, 'node_modules', 'typescript')
+      : fs.mkdtempSync(path.join(os.tmpdir(), 'ts-checker-typescript-config-'));
+    const binDir = path.join(packagePath, 'bin');
+    const libDir = path.join(packagePath, 'lib');
+
+    if (!resolveRoot) {
+      tempDirs.push(packagePath);
+    }
     fs.mkdirSync(binDir, { recursive: true });
+    fs.mkdirSync(libDir, { recursive: true });
     fs.writeFileSync(
       path.join(packagePath, 'package.json'),
       JSON.stringify({
         name: 'typescript',
         version,
+        main: 'lib/typescript.js',
         bin: {
           tsc: 'bin/tsc',
         },
       }),
     );
     fs.writeFileSync(path.join(binDir, 'tsc'), '#!/usr/bin/env node\n');
+    fs.writeFileSync(
+      path.join(libDir, 'typescript.js'),
+      `module.exports = { version: ${JSON.stringify(version)} };\n`,
+    );
 
     return path.join(packagePath, 'package.json');
   }
@@ -161,6 +180,70 @@ describe('typescript/type-scripts-worker-config', () => {
     } finally {
       resolveTypeScriptGoPackageSpy.mockRestore();
     }
+  });
+
+  it('uses resolveRoot to resolve the default TypeScript package', async () => {
+    const resolveRoot = createResolveRoot();
+    createTypeScriptPackage('6.1.0', resolveRoot);
+    const typescriptPath = require.resolve('typescript', { paths: [resolveRoot] });
+    const { createTypeScriptWorkerConfig } = await import(
+      'src/typescript/type-script-worker-config'
+    );
+
+    expect(
+      createTypeScriptWorkerConfig(compiler, {
+        resolveRoot,
+      })
+    ).toEqual({
+      ...configuration,
+      resolveRoot,
+      typescriptPath,
+    });
+  });
+
+  it('uses resolveRoot when detecting the default TypeScript Go package', async () => {
+    const resolveRoot = createResolveRoot();
+    createTypeScriptPackage('7.1.0', resolveRoot);
+    const packageJsonPath = require.resolve('typescript/package.json', {
+      paths: [resolveRoot],
+    });
+    const { createTypeScriptWorkerConfig } = await import(
+      'src/typescript/type-script-worker-config'
+    );
+
+    expect(
+      createTypeScriptWorkerConfig(compiler, {
+        resolveRoot,
+      })
+    ).toEqual({
+      ...configuration,
+      resolveRoot,
+      tsgo: true,
+      tsgoPackage: 'typescript',
+      typescriptPath: packageJsonPath,
+    });
+  });
+
+  it('prefers typescriptPath over resolveRoot', async () => {
+    const resolveRoot = createResolveRoot();
+    createTypeScriptPackage('7.1.0', resolveRoot);
+    const packageJsonPath = createTypeScriptPackage('7.2.0');
+    const { createTypeScriptWorkerConfig } = await import(
+      'src/typescript/type-script-worker-config'
+    );
+
+    expect(
+      createTypeScriptWorkerConfig(compiler, {
+        resolveRoot,
+        typescriptPath: packageJsonPath,
+      })
+    ).toEqual({
+      ...configuration,
+      resolveRoot,
+      tsgo: true,
+      tsgoPackage: 'typescript',
+      typescriptPath: packageJsonPath,
+    });
   });
 
   it('infers tsgo when typescriptPath points to supported TypeScript package', async () => {
