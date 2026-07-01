@@ -7,13 +7,13 @@
     "test:webpack": "cross-env WEBPACK=true playwright test"
   },
   "devDependencies": {
-    "@playwright/test": "1.60.0",
-    "@rsbuild/core": "^2.0.14",
+    "@playwright/test": "1.61.1",
+    "@rsbuild/core": "^2.1.2",
     "@rsbuild/plugin-webpack-swc": "^1.1.2",
     "@rsbuild/webpack": "^1.7.0",
-    "@typescript/native-preview": "7.0.0-dev.20260613.1",
+    "@typescript/native-preview": "7.0.0-dev.20260630.1",
     "cross-env": "^10.1.0",
-    "playwright": "1.60.0",
+    "playwright": "1.61.1",
     "typescript": "^6.0.3"
   }
 }
