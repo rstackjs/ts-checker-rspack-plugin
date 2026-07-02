@@ -38,26 +38,26 @@
   "dependencies": {
     "@rspack/lite-tapable": "^1.1.2",
     "chokidar": "^3.6.0",
-    "memfs": "^4.57.7",
+    "memfs": "^4.57.8",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
     "@babel/code-frame": "^7.29.7",
-    "@rslib/core": "^0.22.1",
-    "@rslint/core": "^0.6.1",
-    "@rspack/core": "^2.0.8",
-    "@rstest/core": "^0.10.4",
+    "@rslib/core": "^0.23.1",
+    "@rslint/core": "^0.6.4",
+    "@rspack/core": "^2.1.2",
+    "@rstest/core": "^0.10.6",
     "@types/babel__code-frame": "^7.27.0",
     "@types/is-glob": "^4.0.4",
     "@types/mock-fs": "^4.13.4",
     "@types/node": "^24.13.2",
-    "@typescript/native-preview": "7.0.0-dev.20260613.1",
+    "@typescript/native-preview": "7.0.0-dev.20260630.1",
     "cross-env": "^10.1.0",
     "husky": "^9.1.7",
     "is-glob": "^4.0.3",
     "minimatch": "^10.2.5",
     "mock-fs": "^5.5.0",
-    "prettier": "^3.8.4",
+    "prettier": "^3.9.4",
     "strip-ansi": "^7.2.0",
     "typescript": "^6.0.3"
   },
@@ -74,7 +74,7 @@
       "optional": true
     }
   },
-  "packageManager": "pnpm@11.6.0",
+  "packageManager": "pnpm@11.9.0",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
