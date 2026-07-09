@@ -115,20 +115,22 @@ Options for the TypeScript checker (`typescript` option object).
 | `diagnosticOptions` | `object`                                                                       | `{ syntactic: false, semantic: true, declaration: false, global: false }`                                                                                                                                 | Settings to select which diagnostics do we want to perform.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `profile`           | `boolean`                                                                      | `false`                                                                                                                                                                                                   | Measures and prints timings related to the TypeScript performance.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `resolveRoot`       | `string`                                                                       | `undefined`                                                                                                                                                                                               | Root used to resolve the default TypeScript package. Relative paths are resolved from `compiler.options.context`. Only used when `typescriptPath` is not set.                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `typescriptPath`    | `string`                                                                       | `require.resolve('typescript/package.json')` for TypeScript 7+, `require.resolve('@typescript/native-preview/package.json')` when `tsgo` falls back to preview, otherwise `require.resolve('typescript')` | Custom TypeScript path. In `tsgo` mode, use an absolute path to `typescript/package.json` or `@typescript/native-preview/package.json`.                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `tsgo`              | `boolean`                                                                      | `true` when TypeScript 7+ is detected, otherwise `false`                                                                                                                                                  | Enables experimental TypeScript Go support. The plugin runs the TypeScript Go checker binary in a child process.                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `typescriptPath`    | `string`                                                                       | `require.resolve('typescript/package.json')` for TypeScript 7+, `require.resolve('@typescript/native-preview/package.json')` when `tsgo` falls back to preview, otherwise `require.resolve('typescript')` | Custom TypeScript path. In `tsgo` mode, use an absolute path to the TypeScript 7+ `package.json` or the legacy `@typescript/native-preview/package.json`.                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `tsgo`              | `boolean`                                                                      | `true` when TypeScript 7+ is detected, otherwise `false`                                                                                                                                                  | Enables TypeScript 7+ native checking. The plugin runs the native TypeScript checker in a child process.                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
-### TypeScript Go support
+### TypeScript 7+ support
 
-`typescript.tsgo` can reduce type-checking time by about 5-10x, especially on large projects, by using the Go implementation of TypeScript. It enables experimental [typescript-go](https://github.com/microsoft/typescript-go) support through TypeScript 7+ or [`@typescript/native-preview`](https://www.npmjs.com/package/@typescript/native-preview).
+`typescript.tsgo` uses the native checker included in TypeScript >= 7. It can reduce type-checking time on large projects.
 
-When the configured or default installed `typescript` package is major version 7 or higher, the plugin enables `typescript.tsgo` automatically and runs the TypeScript Go executable from that package. The default package detection uses `typescript.resolveRoot` when it is set. When `typescript.tsgo: true` is set without a custom `typescriptPath` and TypeScript 7+ is not installed, the plugin falls back to `@typescript/native-preview`.
+When the configured or default installed `typescript` package is major version 7 or higher, the plugin enables `typescript.tsgo` automatically and runs the native executable from that package. 
 
-In this mode, the plugin runs the TypeScript Go binary in a child process, parses its diagnostics, and reports them through the existing issue formatter when possible. If the output cannot be parsed safely, the raw output is printed and the build fails when it exits with errors.
+The default package detection uses `typescript.resolveRoot` when it is set. When `typescript.tsgo: true` is set without a custom `typescriptPath` and TypeScript 7+ is not installed, the plugin falls back to `@typescript/native-preview` for compatibility.
+
+If the checker output cannot be parsed safely, the raw output is printed and the build fails when it exits with errors.
 
 Supported options include `typescript.configFile`, `typescript.context`, `typescript.build`, `typescript.resolveRoot`, `typescript.typescriptPath`, `async`, and `logger`. It also supports `tsconfig.json` compiler options used by `tsgo`, including `incremental` and `composite`.
 
-Install the latest TypeScript to enable `tsgo` automatically:
+Install TypeScript >= 7.0.0 to enable `tsgo` automatically:
 
 ```sh
 # with npm
@@ -141,36 +143,15 @@ yarn add -D typescript@latest
 pnpm add -D typescript@latest
 ```
 
-Or install `@typescript/native-preview` and enable `tsgo` explicitly:
-
-```sh
-# with npm
-npm install -D @typescript/native-preview
-
-# with yarn
-yarn add -D @typescript/native-preview
-
-# with pnpm
-pnpm add -D @typescript/native-preview
-```
-
-```js
-new TsCheckerRspackPlugin({
-  typescript: {
-    tsgo: true,
-  },
-});
-```
-
-> The `@typescript/native-preview` usage is deprecated and kept only for compatibility. We recommend installing `typescript@latest` to use `tsgo`.
+> The `@typescript/native-preview` path is kept only for compatibility. New setups should use TypeScript 7+ from the standard `typescript` package.
 
 Limitations:
 
-- `issue.include`, `issue.exclude`, and `issue.defaultSeverity` only apply to diagnostics whose `tsgo` output can be matched by `file`, `line`, `column`, `code`, and `message`.
+- `issue.include`, `issue.exclude`, and `issue.defaultSeverity` only apply to diagnostics whose checker output can be matched by `file`, `line`, `column`, `code`, and `message`.
 - `typescript.configOverwrite`, `typescript.diagnosticOptions`, and `typescript.profile` are not supported.
 - TypeScript API-based formatting or filesystem output rewrites are not supported.
 - Plugin-controlled declaration or reference emit modes such as `write-dts` and `write-references` are not supported; `tsgo` always runs with `--noEmit`.
-- This integration may change when TypeScript provides a stable JavaScript API for `tsgo`.
+- This integration may change when TypeScript provides a stable JavaScript API for the native checker.
 
 ### Issues options
 
