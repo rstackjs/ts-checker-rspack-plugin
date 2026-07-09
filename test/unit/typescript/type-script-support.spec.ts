@@ -6,6 +6,10 @@ import type { TypeScriptWorkerConfig } from 'src/typescript/type-script-worker-c
 describe('typescript/type-script-support', () => {
   let configuration: TypeScriptWorkerConfig;
   const tempDirs: string[] = [];
+  const tsgoRequirementMessage =
+    '`typescript.tsgo` requires `typescript` >= 7.0.0 or legacy `@typescript/native-preview`.';
+  const tsgoPathMessage =
+    '`typescript.typescriptPath` must be an absolute path to `typescript/package.json` or `@typescript/native-preview/package.json`.';
 
   function createTypeScriptPackage(version: string) {
     const packagePath = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-checker-typescript-support-'));
@@ -119,10 +123,8 @@ describe('typescript/type-script-support', () => {
       error = caughtError as Error;
     }
 
-    expect(error?.message).toContain(
-      'When you enable TsCheckerRspackPlugin with `typescript.tsgo`, you must install `typescript@latest` or `@typescript/native-preview` package.'
-    );
-    expect(error?.message).toContain('If you set `typescript.typescriptPath`');
+    expect(error?.message).toContain(tsgoRequirementMessage);
+    expect(error?.message).toContain(tsgoPathMessage);
   });
 
   it('supports TypeScript package with native executable for tsgo', async () => {
@@ -178,10 +180,8 @@ describe('typescript/type-script-support', () => {
       existsSyncSpy.mockRestore();
     }
 
-    expect(error?.message).toContain(
-      'When you enable TsCheckerRspackPlugin with `typescript.tsgo`, you must install `typescript@latest` or `@typescript/native-preview` package.'
-    );
-    expect(error?.message).not.toContain('If you set `typescript.typescriptPath`');
+    expect(error?.message).toContain(tsgoRequirementMessage);
+    expect(error?.message).not.toContain(tsgoPathMessage);
   });
 
   it('does not print the custom typescriptPath hint for the unresolved default tsgo path', async () => {
@@ -201,13 +201,13 @@ describe('typescript/type-script-support', () => {
       error = caughtError as Error;
     }
 
+    expect(error?.message).toContain(tsgoRequirementMessage);
     expect(error?.message).toContain(
-      'When you enable TsCheckerRspackPlugin with `typescript.tsgo`, you must install `typescript@latest` or `@typescript/native-preview` package.'
+      'Failed to resolve the native TypeScript executable: The typescriptPath option must be an absolute path to a package.json file when tsgo is enabled.',
     );
-    expect(error?.message).not.toContain('If you set `typescript.typescriptPath`');
   });
 
-  it('throws error if the typescript-go executable cannot be resolved', async () => {
+  it('throws error if the native TypeScript executable cannot be resolved', async () => {
     const originalExistsSync = fs.existsSync;
     const existsSyncSpy = rs.spyOn(fs, 'existsSync').mockImplementation((filePath) => {
       const normalizedPath = filePath.toString().replace(/\\/g, '/');
@@ -221,14 +221,23 @@ describe('typescript/type-script-support', () => {
     const { assertTypeScriptGoExecutable } = await import('src/typescript/type-script-support');
 
     try {
-      await expect(
-        assertTypeScriptGoExecutable({
+      let error: Error | undefined;
+
+      try {
+        await assertTypeScriptGoExecutable({
           ...configuration,
           typescriptPath: require.resolve('@typescript/native-preview/package.json'),
           tsgo: true,
           tsgoPackage: 'preview',
-        })
-      ).rejects.toThrowError('Failed to resolve the tsgo executable: Executable not found');
+        });
+      } catch (caughtError) {
+        error = caughtError as Error;
+      }
+
+      expect(error?.message).toContain(tsgoRequirementMessage);
+      expect(error?.message).toContain(
+        'Failed to resolve the native TypeScript executable: Executable not found',
+      );
     } finally {
       existsSyncSpy.mockRestore();
     }

@@ -32,7 +32,7 @@ function resolveTypeScriptGoPackageJsonPath(config: TypeScriptWorkerConfig): str
 
   if (!config.tsgoPackage) {
     throw new Error(
-      `The typescriptPath option must point to "${TYPESCRIPT_PREVIEW_PACKAGE_JSON}" or "${TYPESCRIPT_PACKAGE}@latest".`,
+      `The typescriptPath option must point to "${TYPESCRIPT_PREVIEW_PACKAGE_JSON}" or "${TYPESCRIPT_PACKAGE}@>=7".`,
     );
   }
 
@@ -50,7 +50,7 @@ async function resolveTypeScriptGoNativeExecutablePath(
 
   if (typeof getExePath !== 'function') {
     throw new Error(
-      `Cannot resolve the typescript-go executable from "${packageName}".`,
+      `Cannot resolve the native TypeScript executable from "${packageName}".`,
     );
   }
 
