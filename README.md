@@ -1,7 +1,5 @@
 # ts-checker-rspack-plugin
 
-Rspack plugin that runs TypeScript type checker on a separate process.
-
 <p>
   <a href="https://npmjs.com/package/ts-checker-rspack-plugin">
    <img src="https://img.shields.io/npm/v/ts-checker-rspack-plugin?style=flat-square&colorA=564341&colorB=EDED91" alt="npm version" />
@@ -10,33 +8,32 @@ Rspack plugin that runs TypeScript type checker on a separate process.
   <a href="https://npmcharts.com/compare/ts-checker-rspack-plugin?minimal=true"><img src="https://img.shields.io/npm/dm/ts-checker-rspack-plugin.svg?style=flat-square&colorA=564341&colorB=EDED91" alt="downloads" /></a>
 </p>
 
-## Credits
-
-This plugin is forked from [TypeStrong/fork-ts-checker-webpack-plugin](https://github.com/TypeStrong/fork-ts-checker-webpack-plugin), which is created by [Piotr Oleś](https://github.com/piotr-oles). See the original project's [LICENSE](https://github.com/TypeStrong/fork-ts-checker-webpack-plugin/blob/main/LICENSE).
-
-Big thanks to `fork-ts-checker-webpack-plugin` creators and contributors for their great work. ❤️
+Rspack plugin that runs TypeScript type checker on a separate process.
 
 ## Features
 
 - Speeds up [TypeScript](https://github.com/Microsoft/TypeScript) type checking (by moving it to a separate process) 🏎
-- Supports modern TypeScript features like [project references](https://www.typescriptlang.org/docs/handbook/project-references.html) and [incremental mode](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-4.html#faster-subsequent-builds-with-the---incremental-flag) ✨
+- Supports modern TypeScript features like
+  [project references](https://www.typescriptlang.org/docs/handbook/project-references.html) and
+  [incremental mode](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-4.html#faster-subsequent-builds-with-the---incremental-flag) ✨
 - Displays nice error messages with the [code frame](https://babeljs.io/docs/en/next/babel-code-frame.html) formatter 🌈
 
-💡 For Rsbuild projects, use [@rsbuild/plugin-type-check](https://github.com/rstackjs/rsbuild-plugin-type-check) to get out-of-the-box experience.
+💡 For Rsbuild projects, use [@rsbuild/plugin-type-check](https://github.com/rstackjs/rsbuild-plugin-type-check)
+to get out-of-the-box experience.
 
 ## Installation
 
-This plugin requires **Node.js >=16.0.0+**, **Rspack ^1.0.0**, **TypeScript ^3.8.0**
+This plugin requires **Rspack ^1.0.0**, **TypeScript ^3.8.0**
 
 ```sh
+# with pnpm
+pnpm add -D ts-checker-rspack-plugin
+
 # with npm
 npm install -D ts-checker-rspack-plugin
 
 # with yarn
 yarn add -D ts-checker-rspack-plugin
-
-# with pnpm
-pnpm add -D ts-checker-rspack-plugin
 ```
 
 The minimal Rspack config with [builtin:swc-loader](https://rspack.rs/guide/features/builtin-swc-loader).
@@ -56,11 +53,7 @@ export default {
         test: /\.tsx?$/,
         loader: 'builtin:swc-loader',
         options: {
-          jsc: {
-            parser: {
-              syntax: 'typescript',
-            },
-          },
+          detectSyntax: 'auto',
         },
       },
     ],
@@ -89,46 +82,30 @@ Rspack's modules resolution**. It means that you have to setup `tsconfig.json` c
 >
 > To debug TypeScript's modules resolution, you can use `tsc --traceResolution` command.
 
-## Options
+## TypeScript 7+ support
 
-| Name         | Type                                                             | Default value                             | Description                                                                                                                                                                                                                                                                                                       |
-| ------------ | ---------------------------------------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `async`      | `boolean`                                                        | `compiler.options.mode === 'development'` | If `true`, reports issues **after** Rspack's compilation is done. Thanks to that it doesn't block the compilation. Used only in the `watch` mode.                                                                                                                                                                 |
-| `typescript` | `object`                                                         | `{}`                                      | See [TypeScript options](#typescript-options).                                                                                                                                                                                                                                                                    |
-| `issue`      | `object`                                                         | `{}`                                      | See [Issues options](#issues-options).                                                                                                                                                                                                                                                                            |
-| `formatter`  | `string` or `object` or `function`                               | `codeframe`                               | Available formatters are `basic`, `codeframe` and a custom `function`. To [configure](https://babeljs.io/docs/en/babel-code-frame#options) `codeframe` formatter, pass: `{ type: 'codeframe', options: { <coderame options> } }`. To use absolute file path, pass: `{ type: 'codeframe', pathType: 'absolute' }`. |
-| `logger`     | `{ log: function, error: function }` or `webpack-infrastructure` | `console`                                 | Console-like object to print issues in `async` mode.                                                                                                                                                                                                                                                              |
-| `devServer`  | `boolean`                                                        | `true`                                    | If set to `false`, errors will not be reported to Dev Server and displayed in the error overlay.                                                                                                                                                                                                                  |
+[`typescript.tsgo`](#tsgo) uses the native checker included in TypeScript >= 7. It can reduce type-checking time on large projects.
 
-### TypeScript options
+When the configured or default installed `typescript` package is major version 7 or higher, the plugin enables `typescript.tsgo` automatically and runs the native executable from that package.
 
-Options for the TypeScript checker (`typescript` option object).
+The default package detection uses [`typescript.resolveRoot`](#resolveroot) when it is set.
 
-| Name                | Type                                                                           | Default value                                                                                                                                                                                             | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| ------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `memoryLimit`       | `number`                                                                       | `8192`                                                                                                                                                                                                    | Memory limit for the checker process in MB. If the process exits with the allocation failed error, try to increase this number.                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `configFile`        | `string`                                                                       | `'tsconfig.json'`                                                                                                                                                                                         | Path to the `tsconfig.json` file (path relative to the `compiler.options.context` or absolute path)                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `configOverwrite`   | `object`                                                                       | `{ compilerOptions: { skipLibCheck: true, sourceMap: false, inlineSourceMap: false, declarationMap: false } }`                                                                                            | This configuration will overwrite configuration from the `tsconfig.json` file. Supported fields are: `extends`, `compilerOptions`, `include`, `exclude`, `files`, and `references`.                                                                                                                                                                                                                                                                                                                                                                                      |
-| `context`           | `string`                                                                       | `dirname(configuration.configFile)`                                                                                                                                                                       | The base path for finding files specified in the `tsconfig.json`. Same as the `context` option from the [ts-loader](https://github.com/TypeStrong/ts-loader#context). Useful if you want to keep your `tsconfig.json` in an external package. Keep in mind that **not** having a `tsconfig.json` in your project root can cause different behaviour between `ts-checker-rspack-plugin` and `tsc`. When using editors like `VS Code` it is advised to add a `tsconfig.json` file to the root of the project and extend the config file referenced in option `configFile`. |
-| `build`             | `boolean`                                                                      | `false`                                                                                                                                                                                                   | The equivalent of the `--build` flag for the `tsc` command.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `mode`              | `'readonly'` or `'write-dts'` or `'write-tsbuildinfo'` or `'write-references'` | `build === true ? 'write-tsbuildinfo' ? 'readonly'`                                                                                                                                                       | Use `readonly` if you don't want to write anything on the disk, `write-dts` to write only `.d.ts` files, `write-tsbuildinfo` to write only `.tsbuildinfo` files, `write-references` to write both `.js` and `.d.ts` files of project references (last 2 modes requires `build: true`).                                                                                                                                                                                                                                                                                   |
-| `diagnosticOptions` | `object`                                                                       | `{ syntactic: false, semantic: true, declaration: false, global: false }`                                                                                                                                 | Settings to select which diagnostics do we want to perform.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `profile`           | `boolean`                                                                      | `false`                                                                                                                                                                                                   | Measures and prints timings related to the TypeScript performance.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `resolveRoot`       | `string`                                                                       | `undefined`                                                                                                                                                                                               | Root used to resolve the default TypeScript package. Relative paths are resolved from `compiler.options.context`. Only used when `typescriptPath` is not set.                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `typescriptPath`    | `string`                                                                       | `require.resolve('typescript/package.json')` for TypeScript 7+, `require.resolve('@typescript/native-preview/package.json')` when `tsgo` falls back to preview, otherwise `require.resolve('typescript')` | Custom TypeScript path. In `tsgo` mode, use an absolute path to the TypeScript 7+ `package.json` or the legacy `@typescript/native-preview/package.json`.                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `tsgo`              | `boolean`                                                                      | `true` when TypeScript 7+ is detected, otherwise `false`                                                                                                                                                  | Enables TypeScript 7+ native checking. The plugin runs the native TypeScript checker in a child process.                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-
-### TypeScript 7+ support
-
-`typescript.tsgo` uses the native checker included in TypeScript >= 7. It can reduce type-checking time on large projects.
-
-When the configured or default installed `typescript` package is major version 7 or higher, the plugin enables `typescript.tsgo` automatically and runs the native executable from that package. 
-
-The default package detection uses `typescript.resolveRoot` when it is set. When `typescript.tsgo: true` is set without a custom `typescriptPath` and TypeScript 7+ is not installed, the plugin falls back to `@typescript/native-preview` for compatibility.
+When `typescript.tsgo: true` is set without a custom [`typescriptPath`](#typescriptpath) and TypeScript 7+ is not installed, the plugin falls back to `@typescript/native-preview` for compatibility.
 
 If the checker output cannot be parsed safely, the raw output is printed and the build fails when it exits with errors.
 
-Supported options include `typescript.configFile`, `typescript.context`, `typescript.build`, `typescript.resolveRoot`, `typescript.typescriptPath`, `async`, and `logger`. It also supports `tsconfig.json` compiler options used by `tsgo`, including `incremental` and `composite`.
+Supported options include:
+
+- [`typescript.configFile`](#configfile)
+- [`typescript.context`](#context)
+- [`typescript.build`](#build)
+- `typescript.resolveRoot`
+- `typescript.typescriptPath`
+- [`async`](#async)
+- [`logger`](#logger)
+
+It also supports `tsconfig.json` compiler options used by `tsgo`,
+including `incremental` and `composite`.
 
 Install TypeScript >= 7.0.0 to enable `tsgo` automatically:
 
@@ -147,13 +124,165 @@ pnpm add -D typescript@latest
 
 Limitations:
 
-- `issue.include`, `issue.exclude`, and `issue.defaultSeverity` only apply to diagnostics whose checker output can be matched by `file`, `line`, `column`, `code`, and `message`.
-- `typescript.configOverwrite`, `typescript.diagnosticOptions`, and `typescript.profile` are not supported.
+- [`issue.include`](#include), [`issue.exclude`](#exclude), and [`issue.defaultSeverity`](#defaultseverity) only apply to diagnostics whose checker output can be matched by `file`, `line`, `column`, `code`, and `message`.
+- [`typescript.configOverwrite`](#configoverwrite), [`typescript.diagnosticOptions`](#diagnosticoptions), and [`typescript.profile`](#profile) are not supported.
 - TypeScript API-based formatting or filesystem output rewrites are not supported.
-- Plugin-controlled declaration or reference emit modes such as `write-dts` and `write-references` are not supported; `tsgo` always runs with `--noEmit`.
+- Plugin-controlled declaration or reference emit modes such as `write-dts` and `write-references` are not supported. `tsgo` always runs with `--noEmit`.
 - This integration may change when TypeScript provides a stable JavaScript API for the native checker.
 
-### Issues options
+## Options
+
+### async
+
+If `true`, reports issues **after** Rspack's compilation is done and doesn't block the compilation.
+
+Used only in the `watch` mode.
+
+- **Type:** `boolean`
+- **Default:** `compiler.options.mode === 'development'`
+
+### typescript
+
+See [TypeScript options](#typescript-options).
+
+- **Type:** `object`
+- **Default:** `{}`
+
+### issue
+
+See [Issues options](#issues-options).
+
+- **Type:** `object`
+- **Default:** `{}`
+
+### formatter
+
+Available formatters are `basic`, `codeframe` and a custom `function`.
+
+- To [configure](https://babeljs.io/docs/en/babel-code-frame#options) `codeframe` formatter, pass: `{ type: 'codeframe', options: { <coderame options> } }`.
+- To use absolute file path, pass: `{ type: 'codeframe', pathType: 'absolute' }`.
+
+- **Type:** `string` or `object` or `function`
+- **Default:** `codeframe`
+
+### logger
+
+Console-like object to print issues in `async` mode.
+
+- **Type:** `{ log: function, error: function }` or `webpack-infrastructure`
+- **Default:** `console`
+
+### devServer
+
+If set to `false`, errors will not be reported to Dev Server and displayed in the error overlay.
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+## TypeScript options
+
+Options for the TypeScript checker (`typescript` option object).
+
+### memoryLimit
+
+Memory limit for the checker process in MB. If the process exits with the allocation failed error, try to increase this number.
+
+- **Type:** `number`
+- **Default:** `8192`
+
+### configFile
+
+Path to the `tsconfig.json` file (path relative to the `compiler.options.context` or absolute path)
+
+- **Type:** `string`
+- **Default:** `'tsconfig.json'`
+
+### configOverwrite
+
+This configuration will overwrite configuration from the `tsconfig.json` file.
+
+Supported fields are: `extends`, `compilerOptions`, `include`, `exclude`, `files`, and `references`.
+
+- **Type:** `object`
+- **Default:** `{ compilerOptions: { skipLibCheck: true, sourceMap: false, inlineSourceMap: false, declarationMap: false } }`
+
+### context
+
+The base path for finding files specified in the `tsconfig.json`.
+
+Same as the `context` option from the [ts-loader](https://github.com/TypeStrong/ts-loader#context).
+Useful if you want to keep your `tsconfig.json` in an external package.
+
+Keep in mind that **not** having a `tsconfig.json` in your project root can cause different behavior between `ts-checker-rspack-plugin` and `tsc`.
+
+When using editors like `VS Code` it is advised to add a `tsconfig.json` file to the root of the project and extend the config file referenced in option `configFile`.
+
+- **Type:** `string`
+- **Default:** `dirname(configuration.configFile)`
+
+### build
+
+The equivalent of the `--build` flag for the `tsc` command.
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+### mode
+
+Use:
+
+- `readonly` if you don't want to write anything on the disk
+- `write-dts` to write only `.d.ts` files
+- `write-tsbuildinfo` to write only `.tsbuildinfo` files
+- `write-references` to write both `.js` and `.d.ts` files of project references
+
+The last 2 modes requires `build: true`.
+
+- **Type:** `'readonly'` or `'write-dts'` or `'write-tsbuildinfo'` or `'write-references'`
+- **Default:** `build === true ? 'write-tsbuildinfo' ? 'readonly'`
+
+### diagnosticOptions
+
+Settings to select which diagnostics do we want to perform.
+
+- **Type:** `object`
+- **Default:** `{ syntactic: false, semantic: true, declaration: false, global: false }`
+
+### profile
+
+Measures and prints timings related to the TypeScript performance.
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+### resolveRoot
+
+Root used to resolve the default TypeScript package.
+
+Relative paths are resolved from `compiler.options.context`. Only used when `typescriptPath` is not set.
+
+- **Type:** `string`
+- **Default:** `undefined`
+
+### typescriptPath
+
+Custom TypeScript path.
+
+In `tsgo` mode, use an absolute path to the TypeScript 7+ `package.json` or the legacy `@typescript/native-preview/package.json`.
+
+- **Type:** `string`
+- **Default:**
+  - `require.resolve('typescript/package.json')` for TypeScript 7+
+  - `require.resolve('@typescript/native-preview/package.json')` when `tsgo` falls back to preview, otherwise `require.resolve('typescript')`
+
+### tsgo
+
+Enables TypeScript 7+ native checking. The plugin runs the native TypeScript checker in a child process.
+
+- **Type:** `boolean`
+- **Default:** `true` when TypeScript 7+ is detected, otherwise `false`
+
+## Issues options
 
 Options for the issues filtering (`issue` option object).
 
@@ -178,18 +307,14 @@ type IssuePredicate = (issue: Issue) => boolean;
 type IssuePredicateOption = IssuePredicate | IssueMatch | (IssuePredicate | IssueMatch)[];
 ```
 
-| Name              | Type                             | Default value | Description                                                                                                                                                |
-| ----------------- | -------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `include`         | `IssueFilter`                    | `undefined`   | If `object`, defines issue properties that should be [matched](src/issue/issue-match.ts). If `function`, acts as a predicate where `issue` is an argument. |
-| `exclude`         | `IssueFilter`                    | `undefined`   | Same as `include` but issues that match this predicate will be excluded.                                                                                   |
-| `defaultSeverity` | `'auto' \| 'warning' \| 'error'` | `'auto'`      | Controls how the plugin assigns the severity of emitted issues.                                                                                            |
+### include
 
-`defaultSeverity` behavior:
+If `object`, defines issue properties that should be [matched](src/issue/issue-match.ts).
 
-- `auto`: Uses the default mapping based on the TypeScript diagnostic category (`Error` → `error`, `Warning` → `warning`).
-- `warning`: Forces all issues to be emitted as warnings.
-- `error`: Forces all issues to be emitted as errors.
+If `function`, acts as a predicate where `issue` is an argument.
 
+- **Type:** `IssueFilter`
+- **Default:** `undefined`
 - **Example**:
 
 Include issues from the `src` directory, exclude issues from `.spec.ts` files:
@@ -203,6 +328,14 @@ new TsCheckerRspackPlugin({
 });
 ```
 
+### exclude
+
+Same as `include` but issues that match this predicate will be excluded.
+
+- **Type:** `IssueFilter`
+- **Default:** `undefined`
+- **Example**:
+
 Exclude files under `/node_modules/` using `file:`:
 
 ```js
@@ -212,6 +345,21 @@ new TsCheckerRspackPlugin({
   },
 });
 ```
+
+### defaultSeverity
+
+Controls how the plugin assigns the severity of emitted issues.
+
+- **Type:** `'auto' | 'warning' | 'error'`
+- **Default:** `'auto'`
+
+`defaultSeverity` behavior:
+
+- `auto`: Uses the default mapping based on the TypeScript diagnostic category (`Error` → `error`, `Warning` → `warning`).
+- `warning`: Forces all issues to be emitted as warnings.
+- `error`: Forces all issues to be emitted as errors.
+
+- **Example**:
 
 Force all issues to be emitted as warnings and do not break the build:
 
@@ -270,8 +418,9 @@ module.exports = {
 
 ## Profiling types resolution
 
-When using TypeScript 4.3.0 or newer you can profile long type checks by
-setting "generateTrace" compiler option. This is an instruction from [microsoft/TypeScript#40063](https://github.com/microsoft/TypeScript/pull/40063):
+When using TypeScript 4.3.0 or newer you can profile long type checks by setting "generateTrace" compiler option.
+
+This is an instruction from [microsoft/TypeScript#40063](https://github.com/microsoft/TypeScript/pull/40063):
 
 1. Set "generateTrace": "{folderName}" in your `tsconfig.json` (under `compilerOptions`)
 2. Look in the resulting folder. If you used build mode, there will be a `legend.json` telling you what went where.
@@ -340,6 +489,14 @@ new TsCheckerRspackPlugin({
   },
 });
 ```
+
+## Credits
+
+This plugin is forked from [TypeStrong/fork-ts-checker-webpack-plugin](https://github.com/TypeStrong/fork-ts-checker-webpack-plugin),
+which is created by [Piotr Oleś](https://github.com/piotr-oles).
+See the original project's [LICENSE](https://github.com/TypeStrong/fork-ts-checker-webpack-plugin/blob/main/LICENSE).
+
+Big thanks to `fork-ts-checker-webpack-plugin` creators and contributors for their great work. ❤️
 
 ## License
 
