@@ -136,8 +136,8 @@ Limitations:
 
 Controls whether type checking blocks watch mode compilation.
 
-When `true`, issues are reported after Rspack finishes compiling.
-When `false`, issues are added to the compilation before it finishes.
+- When `true`, issues are reported after Rspack finishes compiling.
+- When `false`, issues are added to the compilation before it finishes.
 
 Used only in the watch mode.
 
