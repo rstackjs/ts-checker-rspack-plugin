@@ -1,4 +1,5 @@
 import { TsCheckerRspackPlugin } from 'ts-checker-rspack-plugin';
+import { HtmlRspackPlugin } from '@rspack/core';
 
 export default {
   entry: './src/index.ts',
@@ -11,20 +12,10 @@ export default {
         test: /\.tsx?$/,
         loader: 'builtin:swc-loader',
         options: {
-          jsc: {
-            parser: {
-              syntax: 'typescript',
-            },
-          },
+          detectSyntax: 'auto',
         },
       },
     ],
   },
-  plugins: [
-    new TsCheckerRspackPlugin({
-      typescript: {
-        tsgo: true,
-      },
-    }),
-  ],
+  plugins: [new TsCheckerRspackPlugin(), new HtmlRspackPlugin()],
 };
