@@ -128,17 +128,17 @@ In this mode, the plugin runs the TypeScript Go binary in a child process, parse
 
 Supported options include `typescript.configFile`, `typescript.context`, `typescript.build`, `typescript.resolveRoot`, `typescript.typescriptPath`, `async`, and `logger`. It also supports `tsconfig.json` compiler options used by `tsgo`, including `incremental` and `composite`.
 
-Install TypeScript 7.0 RC to enable `tsgo` automatically:
+Install the latest TypeScript to enable `tsgo` automatically:
 
 ```sh
 # with npm
-npm install -D typescript@rc
+npm install -D typescript@latest
 
 # with yarn
-yarn add -D typescript@rc
+yarn add -D typescript@latest
 
 # with pnpm
-pnpm add -D typescript@rc
+pnpm add -D typescript@latest
 ```
 
 Or install `@typescript/native-preview` and enable `tsgo` explicitly:
@@ -162,7 +162,7 @@ new TsCheckerRspackPlugin({
 });
 ```
 
-> The `@typescript/native-preview` usage is deprecated and kept only for compatibility. We recommend installing `typescript@rc` to use `tsgo`.
+> The `@typescript/native-preview` usage is deprecated and kept only for compatibility. We recommend installing `typescript@latest` to use `tsgo`.
 
 Limitations:
 

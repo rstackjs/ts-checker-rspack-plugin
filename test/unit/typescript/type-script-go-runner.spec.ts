@@ -158,7 +158,7 @@ describe('typescript/type-script-go-runner', () => {
         typescriptPath: packageJsonPath,
         tsgoPackage: undefined,
       }),
-    ).toThrowError('typescript@rc');
+    ).toThrowError('typescript@latest');
   });
 
   it('extracts the error count from tsgo summary output', async () => {
