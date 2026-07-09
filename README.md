@@ -1,7 +1,5 @@
 # ts-checker-rspack-plugin
 
-Rspack plugin that runs TypeScript type checker on a separate process.
-
 <p>
   <a href="https://npmjs.com/package/ts-checker-rspack-plugin">
    <img src="https://img.shields.io/npm/v/ts-checker-rspack-plugin?style=flat-square&colorA=564341&colorB=EDED91" alt="npm version" />
@@ -10,13 +8,7 @@ Rspack plugin that runs TypeScript type checker on a separate process.
   <a href="https://npmcharts.com/compare/ts-checker-rspack-plugin?minimal=true"><img src="https://img.shields.io/npm/dm/ts-checker-rspack-plugin.svg?style=flat-square&colorA=564341&colorB=EDED91" alt="downloads" /></a>
 </p>
 
-## Credits
-
-This plugin is forked from [TypeStrong/fork-ts-checker-webpack-plugin](https://github.com/TypeStrong/fork-ts-checker-webpack-plugin),
-which is created by [Piotr Oleś](https://github.com/piotr-oles).
-See the original project's [LICENSE](https://github.com/TypeStrong/fork-ts-checker-webpack-plugin/blob/main/LICENSE).
-
-Big thanks to `fork-ts-checker-webpack-plugin` creators and contributors for their great work. ❤️
+Rspack plugin that runs TypeScript type checker on a separate process.
 
 ## Features
 
@@ -31,17 +23,17 @@ to get out-of-the-box experience.
 
 ## Installation
 
-This plugin requires **Node.js >=16.0.0+**, **Rspack ^1.0.0**, **TypeScript ^3.8.0**
+This plugin requires **Rspack ^1.0.0**, **TypeScript ^3.8.0**
 
 ```sh
+# with pnpm
+pnpm add -D ts-checker-rspack-plugin
+
 # with npm
 npm install -D ts-checker-rspack-plugin
 
 # with yarn
 yarn add -D ts-checker-rspack-plugin
-
-# with pnpm
-pnpm add -D ts-checker-rspack-plugin
 ```
 
 The minimal Rspack config with [builtin:swc-loader](https://rspack.rs/guide/features/builtin-swc-loader).
@@ -61,11 +53,7 @@ export default {
         test: /\.tsx?$/,
         loader: 'builtin:swc-loader',
         options: {
-          jsc: {
-            parser: {
-              syntax: 'typescript',
-            },
-          },
+          detectSyntax: 'auto',
         },
       },
     ],
@@ -501,6 +489,14 @@ new TsCheckerRspackPlugin({
   },
 });
 ```
+
+## Credits
+
+This plugin is forked from [TypeStrong/fork-ts-checker-webpack-plugin](https://github.com/TypeStrong/fork-ts-checker-webpack-plugin),
+which is created by [Piotr Oleś](https://github.com/piotr-oles).
+See the original project's [LICENSE](https://github.com/TypeStrong/fork-ts-checker-webpack-plugin/blob/main/LICENSE).
+
+Big thanks to `fork-ts-checker-webpack-plugin` creators and contributors for their great work. ❤️
 
 ## License
 
