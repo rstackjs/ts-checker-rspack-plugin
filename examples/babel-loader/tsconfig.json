@@ -1,13 +1,14 @@
 {
   "compilerOptions": {
-    "target": "ES5",
-    "module": "CommonJS",
-    "lib": ["ES5", "ScriptHost"],
-    "moduleResolution": "Node",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "target": "ES2022",
+    "lib": ["DOM", "ESNext"],
+    "module": "ES2020",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "skipDefaultLibCheck": true,
-    "outDir": "./dist"
+    "strict": true
   },
   "include": ["./src"],
   "exclude": ["node_modules"]

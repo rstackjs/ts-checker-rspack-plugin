@@ -1,15 +1,16 @@
 {
-  "name": "ts-checker-rspack-plugin-typescript-go-example",
+  "name": "ts-checker-rspack-plugin-typescript-7-example",
   "version": "0.0.0",
   "main": "dist/index.js",
   "license": "MIT",
   "scripts": {
-    "dev": "rspack serve --mode=development",
-    "build": "rspack build --mode=production"
+    "dev": "rspack dev",
+    "build": "rspack build"
   },
   "devDependencies": {
     "@rspack/cli": "^2.1.2",
     "@rspack/core": "^2.1.2",
+    "@rspack/dev-server": "^2.1.0",
     "ts-checker-rspack-plugin": "workspace:*",
     "typescript": "^7.0.2"
   }

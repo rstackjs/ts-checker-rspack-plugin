@@ -89,10 +89,13 @@ importers:
         version: 7.29.7(@babel/core@7.29.7)
       '@rspack/cli':
         specifier: ^2.1.2
-        version: 2.1.2(@rspack/core@2.1.2(@swc/helpers@0.5.23))
+        version: 2.1.2(@rspack/core@2.1.2(@swc/helpers@0.5.23))(@rspack/dev-server@2.1.0(@rspack/core@2.1.2(@swc/helpers@0.5.23)))
       '@rspack/core':
         specifier: ^2.1.2
         version: 2.1.2(@swc/helpers@0.5.23)
+      '@rspack/dev-server':
+        specifier: ^2.1.0
+        version: 2.1.0(@rspack/core@2.1.2(@swc/helpers@0.5.23))
       babel-loader:
         specifier: ^10.1.1
         version: 10.1.1(@babel/core@7.29.7)(@rspack/core@2.1.2(@swc/helpers@0.5.23))(webpack@5.107.1)
@@ -107,10 +110,13 @@ importers:
     devDependencies:
       '@rspack/cli':
         specifier: ^2.1.2
-        version: 2.1.2(@rspack/core@2.1.2(@swc/helpers@0.5.23))
+        version: 2.1.2(@rspack/core@2.1.2(@swc/helpers@0.5.23))(@rspack/dev-server@2.1.0(@rspack/core@2.1.2(@swc/helpers@0.5.23)))
       '@rspack/core':
         specifier: ^2.1.2
         version: 2.1.2(@swc/helpers@0.5.23)
+      '@rspack/dev-server':
+        specifier: ^2.1.0
+        version: 2.1.0(@rspack/core@2.1.2(@swc/helpers@0.5.23))
       ts-checker-rspack-plugin:
         specifier: workspace:*
         version: link:../..
@@ -121,14 +127,17 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
-  examples/typescript-go:
+  examples/typescript-7:
     devDependencies:
       '@rspack/cli':
         specifier: ^2.1.2
-        version: 2.1.2(@rspack/core@2.1.2(@swc/helpers@0.5.23))
+        version: 2.1.2(@rspack/core@2.1.2(@swc/helpers@0.5.23))(@rspack/dev-server@2.1.0(@rspack/core@2.1.2(@swc/helpers@0.5.23)))
       '@rspack/core':
         specifier: ^2.1.2
         version: 2.1.2(@swc/helpers@0.5.23)
+      '@rspack/dev-server':
+        specifier: ^2.1.0
+        version: 2.1.0(@rspack/core@2.1.2(@swc/helpers@0.5.23))
       ts-checker-rspack-plugin:
         specifier: workspace:*
         version: link:../..
@@ -176,7 +185,7 @@ importers:
     dependencies:
       '@rspack/cli':
         specifier: ^2.1.2
-        version: 2.1.2(@rspack/core@2.1.2(@swc/helpers@0.5.23))
+        version: 2.1.2(@rspack/core@2.1.2(@swc/helpers@0.5.23))(@rspack/dev-server@2.1.0(@rspack/core@2.1.2(@swc/helpers@0.5.23)))
       '@rspack/core':
         specifier: ^2.1.2
         version: 2.1.2(@swc/helpers@0.5.23)
@@ -200,7 +209,7 @@ importers:
         version: 7.29.7(@babel/core@7.29.7)
       '@rspack/cli':
         specifier: ^2.1.2
-        version: 2.1.2(@rspack/core@2.1.2(@swc/helpers@0.5.23))
+        version: 2.1.2(@rspack/core@2.1.2(@swc/helpers@0.5.23))(@rspack/dev-server@2.1.0(@rspack/core@2.1.2(@swc/helpers@0.5.23)))
       '@rspack/core':
         specifier: ^2.1.2
         version: 2.1.2(@swc/helpers@0.5.23)
@@ -1305,6 +1314,25 @@ packages:
       '@module-federation/runtime-tools':
         optional: true
       '@swc/helpers':
+        optional: true
+
+  '@rspack/dev-middleware@2.0.3':
+    resolution: {integrity: sha512-GxnGj9jy76G3eCPyZei81fwKLAMLZaPEEqFz1/QDYquhwi/qYZX5fekFJ1XVpuwxGEK9KSX3hxZylfwrs4cmLA==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    peerDependencies:
+      '@rspack/core': ^2.0.0
+    peerDependenciesMeta:
+      '@rspack/core':
+        optional: true
+
+  '@rspack/dev-server@2.1.0':
+    resolution: {integrity: sha512-WkCi6bWThVX5Ziv04srPaRoCoUY5FJolO4gqzE7xPO0XbXShsGnwn0vGD0DFfnYFcw9VSsxlmeCDV799lNYclA==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    peerDependencies:
+      '@rspack/core': ^2.0.0
+      selfsigned: ^5.0.0
+    peerDependenciesMeta:
+      selfsigned:
         optional: true
 
   '@rspack/lite-tapable@1.1.2':
@@ -4013,9 +4041,11 @@ snapshots:
       '@rspack/binding-win32-ia32-msvc': 2.1.2
       '@rspack/binding-win32-x64-msvc': 2.1.2
 
-  '@rspack/cli@2.1.2(@rspack/core@2.1.2(@swc/helpers@0.5.23))':
+  '@rspack/cli@2.1.2(@rspack/core@2.1.2(@swc/helpers@0.5.23))(@rspack/dev-server@2.1.0(@rspack/core@2.1.2(@swc/helpers@0.5.23)))':
     dependencies:
       '@rspack/core': 2.1.2(@swc/helpers@0.5.23)
+    optionalDependencies:
+      '@rspack/dev-server': 2.1.0(@rspack/core@2.1.2(@swc/helpers@0.5.23))
 
   '@rspack/core@2.0.8(@swc/helpers@0.5.23)':
     dependencies:
@@ -4028,6 +4058,15 @@ snapshots:
       '@rspack/binding': 2.1.2
     optionalDependencies:
       '@swc/helpers': 0.5.23
+
+  '@rspack/dev-middleware@2.0.3(@rspack/core@2.1.2(@swc/helpers@0.5.23))':
+    optionalDependencies:
+      '@rspack/core': 2.1.2(@swc/helpers@0.5.23)
+
+  '@rspack/dev-server@2.1.0(@rspack/core@2.1.2(@swc/helpers@0.5.23))':
+    dependencies:
+      '@rspack/core': 2.1.2(@swc/helpers@0.5.23)
+      '@rspack/dev-middleware': 2.0.3(@rspack/core@2.1.2(@swc/helpers@0.5.23))
 
   '@rspack/lite-tapable@1.1.2': {}
 

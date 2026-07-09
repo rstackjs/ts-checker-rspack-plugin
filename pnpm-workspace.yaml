@@ -4,3 +4,8 @@ packages:
 
 allowBuilds:
   core-js: false
+
+minimumReleaseAgeExclude:
+  - rstack
+  - typescript
+  - '@typescript/*'

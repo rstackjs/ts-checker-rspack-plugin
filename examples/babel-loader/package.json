@@ -4,8 +4,8 @@
   "main": "dist/index.js",
   "license": "MIT",
   "scripts": {
-    "dev": "rspack serve --mode=development",
-    "build": "rspack build --mode=production"
+    "dev": "rspack dev",
+    "build": "rspack build"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
@@ -15,6 +15,7 @@
     "ts-checker-rspack-plugin": "workspace:*",
     "typescript": "^6.0.3",
     "@rspack/core": "^2.1.2",
-    "@rspack/cli": "^2.1.2"
+    "@rspack/cli": "^2.1.2",
+    "@rspack/dev-server": "^2.1.0"
   }
 }
