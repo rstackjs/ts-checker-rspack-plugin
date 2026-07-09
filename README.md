@@ -465,7 +465,7 @@ Custom TypeScript path.
 - **Type:** `string`
 - **Default:**
   - `require.resolve('typescript/package.json')` for TypeScript 7+
-  - `require.resolve('@typescript/native-preview/package.json')` for TypeScript < 7
+  - otherwise `require.resolve('typescript')`
 - **Example:**
 
 Use the installed `typescript` package with the JavaScript checker:
