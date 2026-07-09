@@ -47,22 +47,18 @@ function isDefaultTypeScriptGoPath(typescriptPath: string): boolean {
 
 function createTypeScriptGoSupportError(config: TypeScriptWorkerConfig, error?: unknown) {
   const message = [
-    `When you enable TsCheckerRspackPlugin with \`typescript.tsgo\`, you must install \`${TYPESCRIPT_PACKAGE}@latest\` or \`${TYPESCRIPT_PREVIEW_PACKAGE}\` package.`,
+    `\`typescript.tsgo\` requires \`${TYPESCRIPT_PACKAGE}\` >= 7.0.0 or legacy \`${TYPESCRIPT_PREVIEW_PACKAGE}\`.`,
   ];
 
   if (!isDefaultTypeScriptGoPath(config.typescriptPath)) {
     message.push(
-      `If you set \`typescript.typescriptPath\`, it must be an absolute path to \`${TYPESCRIPT_PACKAGE_JSON}\` from \`${TYPESCRIPT_PACKAGE}@latest\` or \`${TYPESCRIPT_PREVIEW_PACKAGE_JSON}\`.`,
+      `\`typescript.typescriptPath\` must be an absolute path to \`${TYPESCRIPT_PACKAGE_JSON}\` or \`${TYPESCRIPT_PREVIEW_PACKAGE_JSON}\`.`,
     );
   }
 
   if (error instanceof Error && error.message) {
-    message.push(`Failed to resolve the tsgo executable: ${error.message}`);
+    message.push(`Failed to resolve the native TypeScript executable: ${error.message}`);
   }
-
-  message.push(
-    `You can install it with \`npm add ${TYPESCRIPT_PACKAGE}@latest -D\` or \`npm add ${TYPESCRIPT_PREVIEW_PACKAGE} -D\`.`,
-  );
 
   return new Error(message.join(os.EOL));
 }
