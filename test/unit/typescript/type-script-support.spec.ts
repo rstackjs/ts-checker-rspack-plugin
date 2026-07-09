@@ -120,7 +120,7 @@ describe('typescript/type-script-support', () => {
     }
 
     expect(error?.message).toContain(
-      'When you enable TsCheckerRspackPlugin with `typescript.tsgo`, you must install `typescript@rc` or `@typescript/native-preview` package.'
+      'When you enable TsCheckerRspackPlugin with `typescript.tsgo`, you must install `typescript@latest` or `@typescript/native-preview` package.'
     );
     expect(error?.message).toContain('If you set `typescript.typescriptPath`');
   });
@@ -179,7 +179,7 @@ describe('typescript/type-script-support', () => {
     }
 
     expect(error?.message).toContain(
-      'When you enable TsCheckerRspackPlugin with `typescript.tsgo`, you must install `typescript@rc` or `@typescript/native-preview` package.'
+      'When you enable TsCheckerRspackPlugin with `typescript.tsgo`, you must install `typescript@latest` or `@typescript/native-preview` package.'
     );
     expect(error?.message).not.toContain('If you set `typescript.typescriptPath`');
   });
@@ -202,7 +202,7 @@ describe('typescript/type-script-support', () => {
     }
 
     expect(error?.message).toContain(
-      'When you enable TsCheckerRspackPlugin with `typescript.tsgo`, you must install `typescript@rc` or `@typescript/native-preview` package.'
+      'When you enable TsCheckerRspackPlugin with `typescript.tsgo`, you must install `typescript@latest` or `@typescript/native-preview` package.'
     );
     expect(error?.message).not.toContain('If you set `typescript.typescriptPath`');
   });

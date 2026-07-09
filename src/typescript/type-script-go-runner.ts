@@ -32,7 +32,7 @@ function resolveTypeScriptGoPackageJsonPath(config: TypeScriptWorkerConfig): str
 
   if (!config.tsgoPackage) {
     throw new Error(
-      `The typescriptPath option must point to "${TYPESCRIPT_PREVIEW_PACKAGE_JSON}" or "${TYPESCRIPT_PACKAGE}@rc".`,
+      `The typescriptPath option must point to "${TYPESCRIPT_PREVIEW_PACKAGE_JSON}" or "${TYPESCRIPT_PACKAGE}@latest".`,
     );
   }
 

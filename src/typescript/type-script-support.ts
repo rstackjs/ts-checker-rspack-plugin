@@ -47,12 +47,12 @@ function isDefaultTypeScriptGoPath(typescriptPath: string): boolean {
 
 function createTypeScriptGoSupportError(config: TypeScriptWorkerConfig, error?: unknown) {
   const message = [
-    `When you enable TsCheckerRspackPlugin with \`typescript.tsgo\`, you must install \`${TYPESCRIPT_PACKAGE}@rc\` or \`${TYPESCRIPT_PREVIEW_PACKAGE}\` package.`,
+    `When you enable TsCheckerRspackPlugin with \`typescript.tsgo\`, you must install \`${TYPESCRIPT_PACKAGE}@latest\` or \`${TYPESCRIPT_PREVIEW_PACKAGE}\` package.`,
   ];
 
   if (!isDefaultTypeScriptGoPath(config.typescriptPath)) {
     message.push(
-      `If you set \`typescript.typescriptPath\`, it must be an absolute path to \`${TYPESCRIPT_PACKAGE_JSON}\` from \`${TYPESCRIPT_PACKAGE}@rc\` or \`${TYPESCRIPT_PREVIEW_PACKAGE_JSON}\`.`,
+      `If you set \`typescript.typescriptPath\`, it must be an absolute path to \`${TYPESCRIPT_PACKAGE_JSON}\` from \`${TYPESCRIPT_PACKAGE}@latest\` or \`${TYPESCRIPT_PREVIEW_PACKAGE_JSON}\`.`,
     );
   }
 
@@ -61,7 +61,7 @@ function createTypeScriptGoSupportError(config: TypeScriptWorkerConfig, error?: 
   }
 
   message.push(
-    `You can install it with \`npm add ${TYPESCRIPT_PACKAGE}@rc -D\` or \`npm add ${TYPESCRIPT_PREVIEW_PACKAGE} -D\`.`,
+    `You can install it with \`npm add ${TYPESCRIPT_PACKAGE}@latest -D\` or \`npm add ${TYPESCRIPT_PREVIEW_PACKAGE} -D\`.`,
   );
 
   return new Error(message.join(os.EOL));
