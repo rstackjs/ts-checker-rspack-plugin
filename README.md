@@ -82,7 +82,7 @@ Rspack's modules resolution**. It means that you have to setup `tsconfig.json` c
 >
 > To debug TypeScript's modules resolution, you can use `tsc --traceResolution` command.
 
-### TypeScript 7+ support
+## TypeScript 7+ support
 
 [`typescript.tsgo`](#tsgo) uses the native checker included in TypeScript >= 7. It can reduce type-checking time on large projects.
 
@@ -179,25 +179,25 @@ If set to `false`, errors will not be reported to Dev Server and displayed in th
 - **Type:** `boolean`
 - **Default:** `true`
 
-### TypeScript options
+## TypeScript options
 
 Options for the TypeScript checker (`typescript` option object).
 
-#### memoryLimit
+### memoryLimit
 
 Memory limit for the checker process in MB. If the process exits with the allocation failed error, try to increase this number.
 
 - **Type:** `number`
 - **Default:** `8192`
 
-#### configFile
+### configFile
 
 Path to the `tsconfig.json` file (path relative to the `compiler.options.context` or absolute path)
 
 - **Type:** `string`
 - **Default:** `'tsconfig.json'`
 
-#### configOverwrite
+### configOverwrite
 
 This configuration will overwrite configuration from the `tsconfig.json` file.
 
@@ -206,7 +206,7 @@ Supported fields are: `extends`, `compilerOptions`, `include`, `exclude`, `files
 - **Type:** `object`
 - **Default:** `{ compilerOptions: { skipLibCheck: true, sourceMap: false, inlineSourceMap: false, declarationMap: false } }`
 
-#### context
+### context
 
 The base path for finding files specified in the `tsconfig.json`.
 
@@ -220,14 +220,14 @@ When using editors like `VS Code` it is advised to add a `tsconfig.json` file to
 - **Type:** `string`
 - **Default:** `dirname(configuration.configFile)`
 
-#### build
+### build
 
 The equivalent of the `--build` flag for the `tsc` command.
 
 - **Type:** `boolean`
 - **Default:** `false`
 
-#### mode
+### mode
 
 Use:
 
@@ -241,21 +241,21 @@ The last 2 modes requires `build: true`.
 - **Type:** `'readonly'` or `'write-dts'` or `'write-tsbuildinfo'` or `'write-references'`
 - **Default:** `build === true ? 'write-tsbuildinfo' ? 'readonly'`
 
-#### diagnosticOptions
+### diagnosticOptions
 
 Settings to select which diagnostics do we want to perform.
 
 - **Type:** `object`
 - **Default:** `{ syntactic: false, semantic: true, declaration: false, global: false }`
 
-#### profile
+### profile
 
 Measures and prints timings related to the TypeScript performance.
 
 - **Type:** `boolean`
 - **Default:** `false`
 
-#### resolveRoot
+### resolveRoot
 
 Root used to resolve the default TypeScript package.
 
@@ -264,7 +264,7 @@ Relative paths are resolved from `compiler.options.context`. Only used when `typ
 - **Type:** `string`
 - **Default:** `undefined`
 
-#### typescriptPath
+### typescriptPath
 
 Custom TypeScript path.
 
@@ -275,14 +275,14 @@ In `tsgo` mode, use an absolute path to the TypeScript 7+ `package.json` or the 
   - `require.resolve('typescript/package.json')` for TypeScript 7+
   - `require.resolve('@typescript/native-preview/package.json')` when `tsgo` falls back to preview, otherwise `require.resolve('typescript')`
 
-#### tsgo
+### tsgo
 
 Enables TypeScript 7+ native checking. The plugin runs the native TypeScript checker in a child process.
 
 - **Type:** `boolean`
 - **Default:** `true` when TypeScript 7+ is detected, otherwise `false`
 
-### Issues options
+## Issues options
 
 Options for the issues filtering (`issue` option object).
 
@@ -307,7 +307,7 @@ type IssuePredicate = (issue: Issue) => boolean;
 type IssuePredicateOption = IssuePredicate | IssueMatch | (IssuePredicate | IssueMatch)[];
 ```
 
-#### include
+### include
 
 If `object`, defines issue properties that should be [matched](src/issue/issue-match.ts).
 
@@ -328,7 +328,7 @@ new TsCheckerRspackPlugin({
 });
 ```
 
-#### exclude
+### exclude
 
 Same as `include` but issues that match this predicate will be excluded.
 
@@ -346,7 +346,7 @@ new TsCheckerRspackPlugin({
 });
 ```
 
-#### defaultSeverity
+### defaultSeverity
 
 Controls how the plugin assigns the severity of emitted issues.
 
