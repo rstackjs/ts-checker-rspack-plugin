@@ -134,50 +134,130 @@ Limitations:
 
 ### async
 
-If `true`, reports issues **after** Rspack's compilation is done and doesn't block the compilation.
+Controls whether type checking blocks watch mode compilation.
 
-Used only in the `watch` mode.
+When `true`, issues are reported after Rspack finishes compiling.
+When `false`, issues are added to the compilation before it finishes.
+
+Used only in the watch mode.
 
 - **Type:** `boolean`
 - **Default:** `compiler.options.mode === 'development'`
+- **Example:**
+
+Block watch mode compilation until type checking finishes:
+
+```js
+new TsCheckerRspackPlugin({
+  async: false,
+});
+```
 
 ### typescript
+
+Options passed to the TypeScript checker.
 
 See [TypeScript options](#typescript-options).
 
 - **Type:** `object`
 - **Default:** `{}`
+- **Example:**
+
+Use a separate TypeScript config for type checking:
+
+```js
+new TsCheckerRspackPlugin({
+  typescript: {
+    configFile: './tsconfig.build.json',
+  },
+});
+```
 
 ### issue
+
+Options for filtering emitted issues and overriding their severity.
 
 See [Issues options](#issues-options).
 
 - **Type:** `object`
 - **Default:** `{}`
+- **Example:**
+
+Only report issues from the `src` directory:
+
+```js
+new TsCheckerRspackPlugin({
+  issue: {
+    include: [{ file: '**/src/**/*' }],
+  },
+});
+```
 
 ### formatter
 
-Available formatters are `basic`, `codeframe` and a custom `function`.
+Controls how issues are formatted in terminal output and Rspack errors.
 
-- To [configure](https://babeljs.io/docs/en/babel-code-frame#options) `codeframe` formatter, pass: `{ type: 'codeframe', options: { <coderame options> } }`.
-- To use absolute file path, pass: `{ type: 'codeframe', pathType: 'absolute' }`.
+Available formatters are `basic`, `codeframe` and a custom `function`.
 
 - **Type:** `string` or `object` or `function`
 - **Default:** `codeframe`
+- **Example:**
+
+Use the basic formatter:
+
+```js
+new TsCheckerRspackPlugin({
+  formatter: 'basic',
+});
+```
+
+To [configure](https://babeljs.io/docs/en/babel-code-frame#options) `codeframe` formatter,
+pass: `{ type: 'codeframe', options: { <codeframe options> } }`.
+
+To use absolute file path, pass: `{ type: 'codeframe', pathType: 'absolute' }`.
 
 ### logger
 
-Console-like object to print issues in `async` mode.
+Console-like object used to print async-mode progress, statistics and formatted issues.
+
+Use `webpack-infrastructure` to print through Rspack's infrastructure logger.
 
 - **Type:** `{ log: function, error: function }` or `webpack-infrastructure`
 - **Default:** `console`
+- **Example:**
+
+Use a custom logger object:
+
+```js
+new TsCheckerRspackPlugin({
+  logger: {
+    log(message) {
+      console.log(message);
+    },
+    error(message) {
+      console.error(message);
+    },
+  },
+});
+```
 
 ### devServer
 
-If set to `false`, errors will not be reported to Dev Server and displayed in the error overlay.
+Controls whether async mode issues are sent to the dev server error overlay.
+
+When `false`, issues are still logged but are not injected into the overlay.
 
 - **Type:** `boolean`
 - **Default:** `true`
+- **Example:**
+
+Disable the dev server error overlay integration:
+
+```js
+new TsCheckerRspackPlugin({
+  devServer: false,
+});
+```
 
 ## TypeScript options
 
@@ -185,32 +265,72 @@ Options for the TypeScript checker (`typescript` option object).
 
 ### memoryLimit
 
-Memory limit for the checker process in MB. If the process exits with the allocation failed error, try to increase this number.
+Memory limit for the checker worker process in MB.
+
+If the process exits with an allocation error, try to increase this number.
 
 - **Type:** `number`
 - **Default:** `8192`
+- **Example:**
+
+Limit the checker process to 4096 MB:
+
+```js
+new TsCheckerRspackPlugin({
+  typescript: {
+    memoryLimit: 4096,
+  },
+});
+```
 
 ### configFile
 
-Path to the `tsconfig.json` file (path relative to the `compiler.options.context` or absolute path)
+Path to the TypeScript config file.
+
+Relative paths are resolved from `compiler.options.context`.
 
 - **Type:** `string`
 - **Default:** `'tsconfig.json'`
+- **Example:**
+
+Use a non-default TypeScript config file:
+
+```js
+new TsCheckerRspackPlugin({
+  typescript: {
+    configFile: './tsconfig.build.json',
+  },
+});
+```
 
 ### configOverwrite
 
-This configuration will overwrite configuration from the `tsconfig.json` file.
+Configuration merged into the loaded `tsconfig.json`.
+
+The checker applies implicit compiler option overrides first, then merges this object.
 
 Supported fields are: `extends`, `compilerOptions`, `include`, `exclude`, `files`, and `references`.
 
 - **Type:** `object`
-- **Default:** `{ compilerOptions: { skipLibCheck: true, sourceMap: false, inlineSourceMap: false, declarationMap: false } }`
+- **Default:** `{}`
+- **Example:**
+
+Check only files under `src`:
+
+```js
+new TsCheckerRspackPlugin({
+  typescript: {
+    configOverwrite: {
+      include: ['src'],
+    },
+  },
+});
+```
 
 ### context
 
-The base path for finding files specified in the `tsconfig.json`.
+Base path used when parsing files, include, exclude and references from the TypeScript config.
 
-Same as the `context` option from the [ts-loader](https://github.com/TypeStrong/ts-loader#context).
 Useful if you want to keep your `tsconfig.json` in an external package.
 
 Keep in mind that **not** having a `tsconfig.json` in your project root can cause different behavior between `ts-checker-rspack-plugin` and `tsc`.
@@ -219,68 +339,165 @@ When using editors like `VS Code` it is advised to add a `tsconfig.json` file to
 
 - **Type:** `string`
 - **Default:** `dirname(configuration.configFile)`
+- **Example:**
+
+Resolve config file entries from the current package root:
+
+```js
+new TsCheckerRspackPlugin({
+  typescript: {
+    configFile: './config/tsconfig.json',
+    context: import.meta.dirname,
+  },
+});
+```
 
 ### build
 
-The equivalent of the `--build` flag for the `tsc` command.
+Runs TypeScript in project build mode, equivalent to `tsc --build`.
 
 - **Type:** `boolean`
 - **Default:** `false`
+- **Example:**
+
+Enable TypeScript build mode:
+
+```js
+new TsCheckerRspackPlugin({
+  typescript: {
+    build: true,
+  },
+});
+```
 
 ### mode
 
-Use:
+Controls which TypeScript output artifacts the plugin is allowed to write to disk：
 
 - `readonly` if you don't want to write anything on the disk
 - `write-dts` to write only `.d.ts` files
 - `write-tsbuildinfo` to write only `.tsbuildinfo` files
 - `write-references` to write both `.js` and `.d.ts` files of project references
 
-The last 2 modes requires `build: true`.
+`write-tsbuildinfo` and `write-references` require `build: true`.
 
 - **Type:** `'readonly'` or `'write-dts'` or `'write-tsbuildinfo'` or `'write-references'`
-- **Default:** `build === true ? 'write-tsbuildinfo' ? 'readonly'`
+- **Default:** `build === true ? 'write-tsbuildinfo' : 'readonly'`
+- **Example:**
+
+Write only `.tsbuildinfo` files in build mode:
+
+```js
+new TsCheckerRspackPlugin({
+  typescript: {
+    build: true,
+    mode: 'write-tsbuildinfo',
+  },
+});
+```
 
 ### diagnosticOptions
 
-Settings to select which diagnostics do we want to perform.
+Selects which TypeScript diagnostic categories the checker collects.
 
 - **Type:** `object`
 - **Default:** `{ syntactic: false, semantic: true, declaration: false, global: false }`
+- **Example:**
+
+Enable syntactic diagnostics in addition to semantic diagnostics:
+
+```js
+new TsCheckerRspackPlugin({
+  typescript: {
+    diagnosticOptions: {
+      syntactic: true,
+      semantic: true,
+    },
+  },
+});
+```
 
 ### profile
 
-Measures and prints timings related to the TypeScript performance.
+Enables TypeScript performance measurements and prints them as a table.
 
 - **Type:** `boolean`
 - **Default:** `false`
+- **Example:**
+
+Print TypeScript performance timings:
+
+```js
+new TsCheckerRspackPlugin({
+  typescript: {
+    profile: true,
+  },
+});
+```
 
 ### resolveRoot
 
-Root used to resolve the default TypeScript package.
+Directory used to resolve the default TypeScript package.
 
 Relative paths are resolved from `compiler.options.context`. Only used when `typescriptPath` is not set.
 
 - **Type:** `string`
 - **Default:** `undefined`
+- **Example:**
+
+Resolve TypeScript from the current package root:
+
+```js
+new TsCheckerRspackPlugin({
+  typescript: {
+    resolveRoot: import.meta.dirname,
+  },
+});
+```
 
 ### typescriptPath
 
 Custom TypeScript path.
 
-In `tsgo` mode, use an absolute path to the TypeScript 7+ `package.json` or the legacy `@typescript/native-preview/package.json`.
+- Without `tsgo`, point to the TypeScript package entry.
+- In `tsgo` mode, use an absolute path to the TypeScript 7+ `package.json`
 
 - **Type:** `string`
 - **Default:**
   - `require.resolve('typescript/package.json')` for TypeScript 7+
-  - `require.resolve('@typescript/native-preview/package.json')` when `tsgo` falls back to preview, otherwise `require.resolve('typescript')`
+  - `require.resolve('@typescript/native-preview/package.json')` for TypeScript < 7
+- **Example:**
+
+Use the installed `typescript` package with the JavaScript checker:
+
+```js
+new TsCheckerRspackPlugin({
+  typescript: {
+    tsgo: false,
+    typescriptPath: require.resolve('typescript'),
+  },
+});
+```
 
 ### tsgo
 
-Enables TypeScript 7+ native checking. The plugin runs the native TypeScript checker in a child process.
+Enables the native TypeScript checker.
+
+When unset, the plugin enables it automatically when TypeScript 7+ is detected.
 
 - **Type:** `boolean`
 - **Default:** `true` when TypeScript 7+ is detected, otherwise `false`
+- **Example:**
+
+Force the native checker on:
+
+```js
+new TsCheckerRspackPlugin({
+  typescript: {
+    tsgo: true,
+  },
+});
+```
 
 ## Issues options
 
@@ -309,39 +526,39 @@ type IssuePredicateOption = IssuePredicate | IssueMatch | (IssuePredicate | Issu
 
 ### include
 
-If `object`, defines issue properties that should be [matched](src/issue/issue-match.ts).
+Limits reported issues to those matching the provided issue match object or predicate.
 
-If `function`, acts as a predicate where `issue` is an argument.
+- If `object`, defines issue properties that should be [matched](src/issue/issue-match.ts).
+- If `function`, acts as a predicate where `issue` is an argument.
 
 - **Type:** `IssueFilter`
 - **Default:** `undefined`
-- **Example**:
+- **Example:**
 
-Include issues from the `src` directory, exclude issues from `.spec.ts` files:
+Only report issues from the `src` directory:
 
 ```js
 new TsCheckerRspackPlugin({
   issue: {
     include: [{ file: '**/src/**/*' }],
-    exclude: [{ file: '**/*.spec.ts' }],
   },
 });
 ```
 
 ### exclude
 
-Same as `include` but issues that match this predicate will be excluded.
+Excludes issues matching the provided issue match object or predicate.
 
 - **Type:** `IssueFilter`
 - **Default:** `undefined`
-- **Example**:
+- **Example:**
 
-Exclude files under `/node_modules/` using `file:`:
+Exclude issues from `.spec.ts` files:
 
 ```js
 new TsCheckerRspackPlugin({
   issue: {
-    exclude: [({ file = '' }) => /[\\/]some-folder[\\/]/.test(file)],
+    exclude: [{ file: '**/*.spec.ts' }],
   },
 });
 ```
@@ -359,7 +576,7 @@ Controls how the plugin assigns the severity of emitted issues.
 - `warning`: Forces all issues to be emitted as warnings.
 - `error`: Forces all issues to be emitted as errors.
 
-- **Example**:
+- **Example:**
 
 Force all issues to be emitted as warnings and do not break the build:
 
