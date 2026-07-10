@@ -1,7 +1,7 @@
 import { dirname, resolve } from 'node:path';
 import { readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { expect, test } from '@playwright/test';
+import { expect, test } from '@rstest/playwright';
 import {
   createRsbuild as baseCreateRsbuild,
   mergeRsbuildConfig,
