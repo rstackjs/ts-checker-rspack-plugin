@@ -5,6 +5,5 @@ export default defineConfig({
     // Let Rsbuild choose the mode based on the command.
     NODE_ENV: undefined,
   },
-  include: ['./with-rsbuild/**/*.test.ts'],
   isolate: false,
 });
