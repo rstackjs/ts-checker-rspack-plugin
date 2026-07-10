@@ -8,5 +8,4 @@ export default defineConfig({
   root: __dirname,
   include: ['./with-rsbuild/**/*.test.ts'],
   isolate: false,
-  testTimeout: 30_000,
 });
