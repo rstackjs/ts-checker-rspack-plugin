@@ -3,14 +3,15 @@
   "type": "module",
   "scripts": {
     "setup": "playwright install chromium",
-    "test": "playwright test && pnpm test:webpack",
-    "test:webpack": "cross-env WEBPACK=true playwright test"
+    "test": "rstest && pnpm test:webpack",
+    "test:webpack": "cross-env WEBPACK=true rstest"
   },
   "devDependencies": {
-    "@playwright/test": "1.61.1",
     "@rsbuild/core": "^2.1.2",
     "@rsbuild/plugin-webpack-swc": "^1.1.2",
     "@rsbuild/webpack": "^1.7.0",
+    "@rstest/core": "^0.11.1",
+    "@rstest/playwright": "^0.11.1",
     "@typescript/native-preview": "7.0.0-dev.20260630.1",
     "cross-env": "^10.1.0",
     "playwright": "1.61.1",
