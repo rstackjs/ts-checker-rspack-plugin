@@ -22,7 +22,7 @@ const buildFailedError = /build failed!|Rspack build failed\./;
 const createRsbuild = async (config: CreateRsbuildOptions) => {
   const rsbuildConfig = mergeRsbuildConfig(
     config.rsbuildConfig,
-    { server: { port: getRandomPort() } },
+    { server: { port: await getRandomPort() } },
     process.env.WEBPACK
       ? {
           tools: {
