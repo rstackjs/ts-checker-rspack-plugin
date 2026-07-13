@@ -10,7 +10,7 @@ import {
 import { webpackProvider } from '@rsbuild/webpack';
 import { pluginSwc } from '@rsbuild/plugin-webpack-swc';
 import { TsCheckerRspackPlugin } from '../../../lib';
-import { getRandomPort, proxyConsole } from '../helper';
+import { getRandomPort, proxyConsole } from '@rstackjs/test-utils';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const buildFailedError = /build failed!|Rspack build failed\./;
