@@ -10,4 +10,4 @@ minimumReleaseAgeExclude:
   - typescript
   - '@typescript/*'
   - '@rstest/*'
-  - '@rstackjs/test-utils@0.2.0'
+  - '@rstackjs/*'
