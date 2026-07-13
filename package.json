@@ -46,6 +46,7 @@
     "@rslib/core": "^0.23.1",
     "@rslint/core": "^0.6.4",
     "@rspack/core": "^2.1.2",
+    "@rstackjs/test-utils": "^0.2.0",
     "@rstest/core": "^0.11.1",
     "@types/babel__code-frame": "^7.27.0",
     "@types/is-glob": "^4.0.4",
