@@ -11,8 +11,8 @@
     "ts-checker-rspack-plugin": "workspace:*",
     "ts-loader": "^9.6.2",
     "typescript": "^6.0.3",
-    "@rspack/core": "^2.1.2",
-    "@rspack/cli": "^2.1.2",
+    "@rspack/core": "^2.1.4",
+    "@rspack/cli": "^2.1.4",
     "@rspack/dev-server": "^2.1.0"
   }
 }
