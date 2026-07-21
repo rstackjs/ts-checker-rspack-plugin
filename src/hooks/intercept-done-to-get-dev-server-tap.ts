@@ -7,14 +7,18 @@ import type { TsCheckerRspackPluginState } from '../plugin-state';
 function interceptDoneToGetDevServerTap(
   compiler: rspack.Compiler,
   config: TsCheckerRspackPluginConfig,
-  state: TsCheckerRspackPluginState
+  state: TsCheckerRspackPluginState,
 ) {
   const { debug } = getInfrastructureLogger(compiler);
 
   // inspired by https://github.com/ypresto/fork-ts-checker-async-overlay-webpack-plugin
   compiler.hooks.done.intercept({
     register: (tap) => {
-      if (['webpack-dev-server', 'rsbuild-dev-server'].includes(tap.name) && tap.type === 'sync' && config.devServer) {
+      if (
+        ['webpack-dev-server', 'rsbuild-dev-server', 'rspack-dev-server'].includes(tap.name) &&
+        tap.type === 'sync' &&
+        config.devServer
+      ) {
         debug('Intercepting dev-server tap.');
         state.DevServerDoneTap = tap;
       }
