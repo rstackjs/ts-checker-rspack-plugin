@@ -93,6 +93,25 @@ describe('typescript/type-script-go-runner', () => {
     ]);
   });
 
+  it('creates tsgo emit args for project references in write-references mode', async () => {
+    const { createTypeScriptGoArgs } = await import('src/typescript/type-script-go-runner');
+
+    expect(
+      createTypeScriptGoArgs({ ...config, build: true, mode: 'write-references' }),
+    ).toEqual(['--build', config.configFile, '--noEmit', 'false', '--pretty']);
+  });
+
+  it('keeps write-references read-only outside build mode', async () => {
+    const { createTypeScriptGoArgs } = await import('src/typescript/type-script-go-runner');
+
+    expect(createTypeScriptGoArgs({ ...config, mode: 'write-references' })).toEqual([
+      '--project',
+      config.configFile,
+      '--noEmit',
+      '--pretty',
+    ]);
+  });
+
   it('collects root files from tsgo showConfig', async () => {
     const projectPath = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-checker-tsgo-project-'));
     const srcPath = path.join(projectPath, 'src');
@@ -357,6 +376,24 @@ describe('typescript/type-script-go-runner', () => {
         code: 'TS2345',
         message: 'Type mismatch.',
         severity: 'warning',
+      },
+    ]);
+  });
+
+  it('explains how to check project references when tsgo cannot disable emit', async () => {
+    const { parseTypeScriptGoIssues } = await import('src/typescript/type-script-go-runner');
+
+    expect(
+      parseTypeScriptGoIssues(
+        "tsconfig.json:1:1 - error TS6310: Referenced project './packages/shared' may not disable emit.",
+        { ...config, build: true, mode: 'write-tsbuildinfo' },
+      ),
+    ).toMatchObject([
+      {
+        code: 'TS6310',
+        message: expect.stringContaining(
+          'Set `typescript.mode` to `write-references`',
+        ),
       },
     ]);
   });

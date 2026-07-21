@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "module": "ES2020",
+    "noEmit": true,
+    "outDir": "./__fixtures__/tsgo-references/dist/app",
+    "rootDir": "./__fixtures__/tsgo-references/app",
+    "target": "ES2021",
+    "tsBuildInfoFile": "./__fixtures__/tsgo-references/dist/app/tsconfig.tsbuildinfo"
+  },
+  "include": ["./__fixtures__/tsgo-references/app"],
+  "references": [
+    {
+      "path": "./__fixtures__/tsgo-references"
+    }
+  ]
+}
