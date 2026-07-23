@@ -291,7 +291,7 @@ async function runTypeScriptGo(
     };
 
     const abort = () => {
-      childProcess.kill('SIGTERM');
+      childProcess.kill('SIGKILL');
       finish(() => reject(new AbortError()));
     };
 
