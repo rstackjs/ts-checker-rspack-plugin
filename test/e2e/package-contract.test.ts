@@ -20,6 +20,19 @@ interface CommandFailure extends Error {
   stdout?: string;
 }
 
+function execPnpm(args: string[], cwd: string) {
+  const pnpmCli = process.env.npm_execpath;
+
+  if (pnpmCli) {
+    return execFileAsync(process.execPath, [pnpmCli, ...args], { cwd });
+  }
+
+  return execFileAsync('pnpm', args, {
+    cwd,
+    shell: process.platform === 'win32',
+  });
+}
+
 test('publishes a package whose TypeScript options are usable by consumers', async () => {
   const packageRoot = process.cwd();
   const temporaryDirectory = await realpath(
@@ -32,10 +45,9 @@ test('publishes a package whose TypeScript options are usable by consumers', asy
   await mkdir(consumerDirectory);
 
   try {
-    await execFileAsync(
-      'pnpm',
+    await execPnpm(
       ['pack', '--pack-destination', packDirectory],
-      { cwd: packageRoot },
+      packageRoot,
     );
     const tarballName = (await readdir(packDirectory)).find((file) =>
       file.endsWith('.tgz'),
@@ -91,17 +103,14 @@ test('publishes a package whose TypeScript options are usable by consumers', asy
       ].join('\n'),
     );
 
-    await execFileAsync(
-      'pnpm',
-      ['install', '--offline', '--ignore-workspace'],
-      { cwd: consumerDirectory },
+    await execPnpm(
+      ['install', '--prefer-offline', '--ignore-workspace'],
+      consumerDirectory,
     );
 
     let typeCheckFailure: CommandFailure | undefined;
     try {
-      await execFileAsync('pnpm', ['exec', 'tsc', '--noEmit'], {
-        cwd: consumerDirectory,
-      });
+      await execPnpm(['exec', 'tsc', '--noEmit'], consumerDirectory);
     } catch (error) {
       typeCheckFailure = error as CommandFailure;
     }
@@ -128,9 +137,7 @@ test('publishes a package whose TypeScript options are usable by consumers', asy
       ].join('\n'),
     );
     await expect(
-      execFileAsync('pnpm', ['exec', 'tsc', '--noEmit'], {
-        cwd: consumerDirectory,
-      }),
+      execPnpm(['exec', 'tsc', '--noEmit'], consumerDirectory),
     ).resolves.toBeDefined();
   } finally {
     await rm(temporaryDirectory, { force: true, recursive: true });
