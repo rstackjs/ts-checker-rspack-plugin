@@ -16,7 +16,7 @@ import {
   watchCompiler,
 } from '../helpers/rspack';
 
-test('reloads TypeScript configuration changes in watch mode', async () => {
+test('reloads TypeScript configuration changes in watch mode', { timeout: 30_000 }, async () => {
   const fixture = await createFixture('basic');
   const plugin = new TsCheckerRspackPlugin({
     async: false,

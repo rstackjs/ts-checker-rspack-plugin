@@ -61,7 +61,7 @@ function createRpcWorker<T extends RpcMethod>(
     },
   };
 
-  const remoteMethodProxy = (...args: unknown[]) => {
+  return Object.assign((...args: unknown[]) => {
     if (!worker.connected) {
       // try to auto-connect
       worker.connect();
@@ -72,22 +72,7 @@ function createRpcWorker<T extends RpcMethod>(
     }
 
     return remoteMethod(...args);
-  };
-
-  return Object.defineProperties(remoteMethodProxy, {
-    connect: {
-      value: worker.connect,
-    },
-    terminate: {
-      value: worker.terminate,
-    },
-    connected: {
-      get: () => worker.connected,
-    },
-    process: {
-      get: () => worker.process,
-    },
-  }) as RpcWorker<T>;
+  }, worker) as RpcWorker<T>;
 }
 function getRpcWorkerData(): unknown {
   return JSON.parse(process.env[WORKER_DATA_ENV_KEY] || '{}');

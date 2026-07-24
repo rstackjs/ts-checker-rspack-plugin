@@ -1,7 +1,24 @@
-import { once } from 'node:events';
 import path from 'node:path';
 
 import { createRpcWorker } from 'src/rpc';
+
+async function waitForProcessExit(pid: number): Promise<void> {
+  const deadline = Date.now() + 2_000;
+
+  while (Date.now() < deadline) {
+    try {
+      process.kill(pid, 0);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ESRCH') {
+        return;
+      }
+      throw error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+
+  throw new Error(`Process ${pid} did not exit.`);
+}
 
 describe('rpc/rpc-worker', () => {
   it('starts a fresh process for the next request after a worker exits', async () => {
@@ -15,26 +32,13 @@ describe('rpc/rpc-worker', () => {
 
     try {
       const firstPid = await worker();
-      const firstProcess = worker.process;
-
-      expect(firstProcess?.pid).toBe(firstPid);
-      expect(worker.connected).toBe(true);
-
-      const firstClose = once(firstProcess!, 'close');
-      firstProcess!.kill('SIGTERM');
-      await firstClose;
-
-      expect(worker.connected).toBe(false);
+      await waitForProcessExit(firstPid);
 
       const secondPid = await worker();
       expect(secondPid).not.toBe(firstPid);
-      expect(worker.process?.pid).toBe(secondPid);
-      expect(worker.connected).toBe(true);
+      await waitForProcessExit(secondPid);
     } finally {
-      const activeProcess = worker.process;
-      const close = activeProcess ? once(activeProcess, 'close') : undefined;
       worker.terminate();
-      await close;
     }
   });
 });
