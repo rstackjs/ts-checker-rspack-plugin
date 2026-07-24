@@ -90,6 +90,57 @@ test('should throw error when exist type errors in dev mode', async ({ page }) =
   await server.close();
 });
 
+test('should type-check a root file added in dev mode', { timeout: 30_000 }, async ({ page }) => {
+  const { logs, restore } = proxyConsole();
+  const rootFilePath = resolve(__dirname, 'src/root-file-watch.ts');
+
+  await rm(rootFilePath, { force: true });
+
+  const rsbuild = await createRsbuild({
+    rsbuildConfig: {
+      tools: {
+        rspack: {
+          plugins: [
+            new TsCheckerRspackPlugin({
+              async: false,
+            }),
+          ],
+        },
+      },
+    },
+  });
+
+  const { server, urls } = await rsbuild.startDevServer();
+
+  try {
+    await page.goto(urls[0]);
+
+    const initialLogCount = logs.length;
+    await writeFile(rootFilePath, "const rootFileValue: number = 'root file';\n");
+
+    await expect
+      .poll(
+        () => {
+          const rebuildLogs = logs.slice(initialLogCount);
+          return (
+            rebuildLogs.some(
+              (log) => log.includes('File:') && log.includes('root-file-watch.ts'),
+            ) &&
+            rebuildLogs.some((log) =>
+              log.includes(`Type 'string' is not assignable to type 'number'.`),
+            )
+          );
+        },
+        { timeout: 20_000 },
+      )
+      .toBeTruthy();
+  } finally {
+    restore();
+    await server.close();
+    await rm(rootFilePath, { force: true });
+  }
+});
+
 test('should not throw error when the file is excluded', async () => {
   const rsbuild = await createRsbuild({
     rsbuildConfig: {

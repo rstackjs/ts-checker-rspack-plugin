@@ -48,11 +48,13 @@ const getIssuesWorker = async (
 
     invalidateTsBuildInfo();
   } else if (didDependenciesProbablyChanged(getDependencies(), change)) {
+    const rootFilesChanged = didRootFilesChanged();
+
     invalidateConfig();
     invalidateDependencies();
     invalidateArtifacts();
 
-    if (didRootFilesChanged()) {
+    if (rootFilesChanged) {
       invalidateWatchProgramRootFileNames();
       invalidateSolutionBuilder();
     }
