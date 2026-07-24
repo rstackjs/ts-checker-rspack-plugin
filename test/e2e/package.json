@@ -2,8 +2,7 @@
   "name": "test-e2e",
   "type": "module",
   "scripts": {
-    "setup": "playwright install chromium",
-    "test": "rstest"
+    "setup": "playwright install chromium"
   },
   "devDependencies": {
     "@rsbuild/core": "^2.1.6",

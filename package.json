@@ -30,10 +30,10 @@
     "lint:write": "rslint --fix",
     "precommit": "pnpm build && pnpm test:unit",
     "prepare": "husky",
-    "test": "pnpm build && pnpm test:unit && pnpm test:e2e",
-    "test:e2e": "cd test/e2e && pnpm test",
+    "test": "pnpm build && rstest",
+    "test:e2e": "rstest --project e2e",
     "test:e2e:setup": "cd test/e2e && pnpm run setup",
-    "test:unit": "rstest --config=test/unit/rstest.config.ts"
+    "test:unit": "rstest --project unit"
   },
   "dependencies": {
     "@rspack/lite-tapable": "^1.1.2",
