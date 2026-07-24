@@ -21,7 +21,6 @@ import { invalidateProgram, useProgram } from './lib/program/program';
 import { invalidateSolutionBuilder, useSolutionBuilder } from './lib/program/solution-builder';
 import {
   invalidateWatchProgram,
-  invalidateWatchProgramRootFileNames,
   useWatchProgram,
 } from './lib/program/watch-program';
 import { system } from './lib/system';
@@ -48,12 +47,20 @@ const getIssuesWorker = async (
 
     invalidateTsBuildInfo();
   } else if (didDependenciesProbablyChanged(getDependencies(), change)) {
+    // Compare against the currently parsed config before invalidating it.
+    // Otherwise parseNextConfig() has no previous root-file list to compare
+    // and newly created or restored files are never added to watch programs.
+    const rootFilesChanged = didRootFilesChanged();
+
     invalidateConfig();
     invalidateDependencies();
     invalidateArtifacts();
 
-    if (didRootFilesChanged()) {
-      invalidateWatchProgramRootFileNames();
+    if (rootFilesChanged) {
+      // Recreate the host as well as the watch program so its root-file list
+      // and module-resolution cache both reflect added, deleted, or restored
+      // files.
+      invalidateWatchProgram(true);
       invalidateSolutionBuilder();
     }
   }

@@ -1,47 +1,59 @@
+import {
+  mkdtempSync,
+  mkdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import os from 'node:os';
+import path from 'node:path';
 
-import mockFs from 'mock-fs';
 import type { FormatterOptions } from 'src/formatter';
 import { createFormatterConfig } from 'src/formatter';
 import type { Issue } from 'src/issue';
 
-// TODO: fix this test
-describe.skip('formatter/formatter-config', () => {
+describe('formatter/formatter-config', () => {
+  let fixtureRoot: string;
+  let issue: Issue;
+
   beforeEach(() => {
-    mockFs({
-      src: {
-        'index.ts': [
-          'const foo: number = "1";',
-          'const bar = 1;',
-          '',
-          'function baz() {',
-          '  console.log(baz);',
-          '}',
-        ].join('\n'),
+    fixtureRoot = mkdtempSync(path.join(os.tmpdir(), 'ts-checker-formatter-'));
+    const sourceDirectory = path.join(fixtureRoot, 'src');
+    const sourceFile = path.join(sourceDirectory, 'index.ts');
+
+    mkdirSync(sourceDirectory);
+    writeFileSync(
+      sourceFile,
+      [
+        'const foo: number = "1";',
+        'const bar = 1;',
+        '',
+        'function baz() {',
+        '  console.log(baz);',
+        '}',
+      ].join('\n'),
+    );
+
+    issue = {
+      severity: 'error',
+      code: 'TS2322',
+      message: `Type '"1"' is not assignable to type 'number'.`,
+      file: sourceFile,
+      location: {
+        start: {
+          line: 1,
+          column: 7,
+        },
+        end: {
+          line: 1,
+          column: 10,
+        },
       },
-    });
+    };
   });
 
   afterEach(() => {
-    mockFs.restore();
+    rmSync(fixtureRoot, { force: true, recursive: true });
   });
-
-  const issue: Issue = {
-    severity: 'error',
-    code: 'TS2322',
-    message: `Type '"1"' is not assignable to type 'number'.`,
-    file: 'src/index.ts',
-    location: {
-      start: {
-        line: 1,
-        column: 7,
-      },
-      end: {
-        line: 1,
-        column: 10,
-      },
-    },
-  };
 
   const customFormatter = (issue: Issue) =>
     `${issue.code}: ${issue.message} at line ${issue.location.start.line}`;
