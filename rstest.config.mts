@@ -5,7 +5,6 @@ process.env.NO_COLOR = '1';
 process.env.FORCE_COLOR = '0';
 
 export default defineConfig({
-  isolate: false,
   projects: [
     defineInlineProject({
       name: 'unit',
