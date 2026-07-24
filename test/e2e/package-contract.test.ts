@@ -21,22 +21,46 @@ interface CommandFailure extends Error {
 }
 
 function execPnpm(args: string[], cwd: string) {
-  const pnpmCli = process.env.npm_execpath;
+  return execPnpmWithCli(args, cwd, process.env.npm_execpath || null);
+}
 
+function execPnpmWithCli(
+  args: string[],
+  cwd: string,
+  pnpmCli: string | null,
+) {
   if (pnpmCli) {
     return execFileAsync(process.execPath, [pnpmCli, ...args], { cwd });
   }
 
-  return execFileAsync('pnpm', args, {
-    cwd,
-    shell: process.platform === 'win32',
-  });
+  if (process.platform === 'win32') {
+    const command = ['pnpm', ...args.map(quoteWindowsCommandArgument)].join(
+      ' ',
+    );
+    return execFileAsync(
+      process.env.ComSpec || 'cmd.exe',
+      ['/d', '/s', '/c', command],
+      { cwd },
+    );
+  }
+
+  return execFileAsync('pnpm', args, { cwd });
+}
+
+function quoteWindowsCommandArgument(argument: string): string {
+  if (/[\0\r\n"%!]/.test(argument)) {
+    throw new Error(
+      `Unsupported character in pnpm argument: ${JSON.stringify(argument)}`,
+    );
+  }
+
+  return `"${argument}"`;
 }
 
 test('publishes a package whose TypeScript options are usable by consumers', async () => {
   const packageRoot = process.cwd();
   const temporaryDirectory = await realpath(
-    await mkdtemp(join(tmpdir(), 'ts-checker-package-contract-')),
+    await mkdtemp(join(tmpdir(), 'ts-checker package contract-')),
   );
   const packDirectory = join(temporaryDirectory, 'pack');
   const consumerDirectory = join(temporaryDirectory, 'consumer');
@@ -45,6 +69,14 @@ test('publishes a package whose TypeScript options are usable by consumers', asy
   await mkdir(consumerDirectory);
 
   try {
+    await expect(
+      execPnpmWithCli(
+        ['--dir', temporaryDirectory, '--version'],
+        packageRoot,
+        null,
+      ),
+    ).resolves.toBeDefined();
+
     await execPnpm(
       ['pack', '--pack-destination', packDirectory],
       packageRoot,

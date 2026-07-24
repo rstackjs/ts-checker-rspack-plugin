@@ -38,6 +38,21 @@ test('writes declarations but leaves JavaScript emission to Rspack in write-dts 
 
 test.each([
   {
+    name: 'default',
+    mode: undefined,
+    expected: [
+      'packages/shared/lib/tsconfig.tsbuildinfo',
+      'packages/app/lib/tsconfig.tsbuildinfo',
+    ],
+    absent: [
+      'packages/shared/lib/index.js',
+      'packages/shared/lib/index.d.ts',
+      'packages/app/lib/index.js',
+      'packages/app/lib/index.d.ts',
+    ],
+  },
+  {
+    name: 'readonly',
     mode: 'readonly',
     expected: [],
     absent: [
@@ -46,6 +61,7 @@ test.each([
     ],
   },
   {
+    name: 'write-tsbuildinfo',
     mode: 'write-tsbuildinfo',
     expected: [
       'packages/shared/lib/tsconfig.tsbuildinfo',
@@ -59,6 +75,7 @@ test.each([
     ],
   },
   {
+    name: 'write-dts',
     mode: 'write-dts',
     expected: [
       'packages/shared/lib/tsconfig.tsbuildinfo',
@@ -74,6 +91,7 @@ test.each([
     ],
   },
   {
+    name: 'write-references',
     mode: 'write-references',
     expected: [
       'packages/shared/lib/tsconfig.tsbuildinfo',
@@ -86,19 +104,20 @@ test.each([
     absent: [],
   },
 ] as const)(
-  'writes only the allowed SolutionBuilder artifacts in $mode mode',
+  'writes only the allowed SolutionBuilder artifacts in $name mode',
   async ({ mode, expected, absent }) => {
     const fixture = await createFixture('project-references');
     const plugin = new TsCheckerRspackPlugin({
       typescript: {
         build: true,
-        mode,
+        ...(mode ? { mode } : {}),
         tsgo: false,
       },
     });
     const compiler = createCompiler(
       createRspackConfig(fixture.root, plugin, {
         entry: './packages/app/src/index.ts',
+        mode: 'production',
         resolve: {
           alias: {
             '@fixture/shared': fixture.path('packages/shared/src'),

@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 
 import {
   rspack,
+  type Compilation,
   type Compiler,
   type Configuration,
   type MultiStats,
@@ -25,6 +26,7 @@ export interface RecordedFilesChange {
 
 export interface RecordedIssueEvent {
   change?: RecordedFilesChange;
+  compilation?: Compilation;
   issues: RecordedIssue[];
 }
 
@@ -154,6 +156,7 @@ export function recordCompiler(compiler: Compiler): CompilerRecorder {
       change: compilation
         ? compilationChanges.get(compilation)
         : undefined,
+      compilation,
       issues: recordedIssues,
     });
     return nextIssues;

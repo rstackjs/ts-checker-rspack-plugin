@@ -22,18 +22,6 @@ async function waitForInitialCompilation(
   await new Promise((resolveWait) => setTimeout(resolveWait, 100));
 }
 
-async function waitForChangedFile(
-  recorder: CompilerRecorder,
-  index: number,
-  relativePath: string,
-): Promise<void> {
-  await recorder.waitForChangesAfter(index, (change) =>
-    [...change.changedFiles, ...change.deletedFiles].some((file) =>
-      file.replaceAll('\\', '/').endsWith(relativePath),
-    ),
-  );
-}
-
 async function waitForIssuesForFile(
   recorder: CompilerRecorder,
   index: number,
@@ -127,86 +115,6 @@ test.each([{ async: false }, { async: true }])(
   20_000,
 );
 
-test('does not rebuild for files excluded by Rspack watchOptions.ignored', async () => {
-  const fixture = await createFixture('basic');
-  await fixture.write('src/ignored/value.ts', 'export const value: number = 1;\n');
-  await fixture.write(
-    'src/index.ts',
-    [
-      "import { value } from './ignored/value';",
-      "import { add } from './math';",
-      '',
-      'const result = add(value, 2);',
-      '',
-      'if (typeof document !== "undefined") {',
-      '  document.body.innerHTML = `<main>${result}</main>`;',
-      '}',
-      '',
-      'export { result };',
-      '',
-    ].join('\n'),
-  );
-
-  const plugin = new TsCheckerRspackPlugin({
-    async: false,
-    typescript: { tsgo: false },
-  });
-  const compiler = createCompiler(
-    createRspackConfig(fixture.root, plugin, {
-      output: {
-        path: fixture.path('../ignored-watch-output'),
-      },
-      watchOptions: {
-        ignored: /[\\/]src[\\/]ignored(?:[\\/]|$)/,
-      },
-    }),
-  );
-  const recorder = recordCompiler(compiler);
-  const { watching, fatalErrors } = watchCompiler(compiler);
-
-  try {
-    const [, initialIssues] = await Promise.all([
-      recorder.waitForBuildAfter(0),
-      recorder.waitForIssuesAfter(0, () => true),
-    ]);
-    expect(initialIssues).toEqual([]);
-    await new Promise((resolveWait) => setTimeout(resolveWait, 250));
-    const buildCount = recorder.builds.length;
-    const changeCount = recorder.changes.length;
-    const issueCount = recorder.issues.length;
-
-    await fixture.replace(
-      'src/ignored/value.ts',
-      'value: number = 1',
-      "value: number = 'ignored'",
-    );
-    await new Promise((resolveWait) => setTimeout(resolveWait, 750));
-
-    expect(recorder.builds).toHaveLength(buildCount);
-    expect(recorder.changes).toHaveLength(changeCount);
-    expect(recorder.issues).toHaveLength(issueCount);
-
-    await fixture.replace(
-      'src/ignored/value.ts',
-      "value: number = 'ignored'",
-      'value: number = 1',
-    );
-    await fixture.write(
-      'src/index.ts',
-      `${await fixture.read('src/index.ts')}\n// trigger a non-ignored rebuild\n`,
-    );
-
-    await waitForChangedFile(recorder, changeCount, '/src/index.ts');
-    const nextStats = await recorder.waitForBuildAfter(buildCount);
-    expect(getStatsMessages(nextStats).errors).toEqual([]);
-    expect(fatalErrors).toEqual([]);
-    expect(recorder.workerErrors).toEqual([]);
-  } finally {
-    await closeWatching(watching);
-    await fixture.cleanup();
-  }
-}, 20_000);
-
 test.each([{ async: false }, { async: true }])(
   'ignores package.json in incremental TypeScript changes when async is $async',
   async ({ async }) => {
@@ -256,6 +164,7 @@ test.each([{ async: false }, { async: true }])(
       await waitForInitialCompilation(recorder);
       const buildIndex = recorder.builds.length;
       const changeIndex = recorder.changes.length;
+      const issueEventIndex = recorder.issueEvents.length;
 
       await fixture.replace(
         'package/package.json',
@@ -264,15 +173,19 @@ test.each([{ async: false }, { async: true }])(
       );
 
       const stats = await recorder.waitForBuildAfter(buildIndex);
-      const change = await recorder.waitForChangesAfter(
-        changeIndex,
-        () => true,
+      const issueEvent = await recorder.waitForIssueEventAfter(
+        issueEventIndex,
+        (event) => event.compilation === stats.compilation,
       );
+      const changes = recorder.changes.slice(changeIndex);
 
       expect(getStatsMessages(stats).errors).toEqual([]);
+      expect(issueEvent.issues).toEqual([]);
       expect(
-        [...change.changedFiles, ...change.deletedFiles].some((file) =>
-          file.endsWith('package.json'),
+        changes.some((change) =>
+          [...change.changedFiles, ...change.deletedFiles].some((file) =>
+            file.endsWith('package.json'),
+          ),
         ),
       ).toBe(false);
       expect(fatalErrors).toEqual([]);

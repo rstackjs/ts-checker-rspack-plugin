@@ -34,7 +34,7 @@ pnpm test:e2e
 | Custom formatter | `with-rspack/config.test.ts` plus formatter unit tests |
 | SolutionBuilder modes and project propagation | `with-rspack/build-and-emit.test.ts`, `with-rspack/watch.test.ts` |
 | TypeScript tracing | `with-rspack/tracing.test.ts` |
-| Watch add/change/delete/restore and ignored paths | `with-rspack/watch.test.ts` |
+| Watch add/change/delete/restore | `with-rspack/watch.test.ts` |
 | Incremental `package.json` handling | `with-rspack/watch.test.ts` |
 | Production output and declaration emission | `with-rspack/build-and-emit.test.ts` |
 | `ts-loader` and Babel transpilation | `with-rspack/loader-compat.test.ts` |

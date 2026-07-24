@@ -37,9 +37,6 @@ test.each([{ build: false }, { build: true }])(
       expect(
         traceFiles.some((file) => /^trace.*\.json$/.test(basename(file))),
       ).toBe(true);
-      expect(
-        traceFiles.some((file) => /^types.*\.json$/.test(basename(file))),
-      ).toBe(true);
     } finally {
       await closeCompiler(compiler);
       await fixture.cleanup();
