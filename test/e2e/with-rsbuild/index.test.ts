@@ -7,34 +7,16 @@ import {
   mergeRsbuildConfig,
   type CreateRsbuildOptions,
 } from '@rsbuild/core';
-import { webpackProvider } from '@rsbuild/webpack';
-import { pluginSwc } from '@rsbuild/plugin-webpack-swc';
 import { TsCheckerRspackPlugin } from '../../../lib';
 import { getRandomPort, proxyConsole } from '@rstackjs/test-utils';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const buildFailedError = /build failed!|Rspack build failed\./;
 
-/**
- * Although this plugin is designed for Rspack, it can also be used in webpack in some cases.
- * So we need to test the webpack compatibility.
- */
 const createRsbuild = async (config: CreateRsbuildOptions) => {
   const rsbuildConfig = mergeRsbuildConfig(
     config.rsbuildConfig,
     { server: { port: await getRandomPort() } },
-    process.env.WEBPACK
-      ? {
-          tools: {
-            webpack: config.rsbuildConfig?.tools?.rspack as any,
-          },
-          dev: {
-            progressBar: false,
-          },
-          provider: webpackProvider,
-          plugins: [pluginSwc()],
-        }
-      : {},
   );
 
   return await baseCreateRsbuild({
