@@ -1,4 +1,4 @@
-import { execFile } from 'node:child_process';
+import { exec, execFile } from 'node:child_process';
 import {
   mkdir,
   mkdtemp,
@@ -14,6 +14,7 @@ import { promisify } from 'node:util';
 import { expect, test } from '@rstest/core';
 
 const execFileAsync = promisify(execFile);
+const execAsync = promisify(exec);
 
 interface CommandFailure extends Error {
   stderr?: string;
@@ -37,11 +38,10 @@ function execPnpmWithCli(
     const command = ['pnpm', ...args.map(quoteWindowsCommandArgument)].join(
       ' ',
     );
-    return execFileAsync(
-      process.env.ComSpec || 'cmd.exe',
-      ['/d', '/s', '/c', command],
-      { cwd },
-    );
+    return execAsync(command, {
+      cwd,
+      shell: process.env.ComSpec || 'cmd.exe',
+    });
   }
 
   return execFileAsync('pnpm', args, { cwd });
