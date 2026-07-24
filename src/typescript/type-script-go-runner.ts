@@ -87,9 +87,15 @@ async function resolveTypeScriptGoExecutable(
 function createTypeScriptGoArgs(config: TypeScriptWorkerConfig) {
   const args = config.build ? ['--build', config.configFile] : ['--project', config.configFile];
 
-  // Keep tsgo as a checker in this plugin. Incremental .tsbuildinfo is still controlled
-  // by tsconfig's `incremental` / `composite` options, matching the compiler CLI.
-  args.push('--noEmit', '--pretty');
+  if (config.build && config.mode === 'write-references') {
+    args.push('--noEmit', 'false');
+  } else {
+    // Incremental .tsbuildinfo is still controlled by tsconfig's `incremental` /
+    // `composite` options, matching the compiler CLI.
+    args.push('--noEmit');
+  }
+
+  args.push('--pretty');
 
   return args;
 }
@@ -132,6 +138,26 @@ function createTypeScriptGoIssue(message: string): Issue {
     code: TYPESCRIPT_GO_ISSUE_CODE,
     message,
   };
+}
+
+function getTypeScriptGoDiagnosticMessage(
+  code: string,
+  message: string,
+  config: TypeScriptWorkerConfig,
+) {
+  if (
+    code === '6310' &&
+    config.build &&
+    (config.mode === 'readonly' || config.mode === 'write-tsbuildinfo')
+  ) {
+    return [
+      message,
+      'The native TypeScript checker cannot rebuild projects with references without emitting their required outputs.',
+      'Set `typescript.mode` to `write-references`, or build the references separately and set `typescript.build` to false.',
+    ].join(' ');
+  }
+
+  return message;
 }
 
 const diagnosticPattern = /^(.*?):(\d+):(\d+)\s+-\s+(error|warning)\s+TS(\d+):\s+(.+)$/;
@@ -183,7 +209,7 @@ function parseTypeScriptGoIssues(
     issues.push({
       severity: getTypeScriptGoIssueSeverity(severity as Issue['severity'], defaultSeverity),
       code: `TS${code}`,
-      message,
+      message: getTypeScriptGoDiagnosticMessage(code, message, config),
       file: path.isAbsolute(file) ? file : path.resolve(config.context, file),
       location: {
         start: position,
@@ -201,7 +227,7 @@ function parseTypeScriptGoIssues(
     issues.push({
       severity: getTypeScriptGoIssueSeverity(severity as Issue['severity'], defaultSeverity),
       code: `TS${code}`,
-      message,
+      message: getTypeScriptGoDiagnosticMessage(code, message, config),
     });
   }
 

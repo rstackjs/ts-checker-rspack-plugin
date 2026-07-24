@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "module": "ES2020",
+    "noEmit": true,
+    "outDir": "./dist/reference",
+    "rootDir": "./src",
+    "target": "ES2021",
+    "tsBuildInfoFile": "./dist/reference/tsconfig.tsbuildinfo"
+  },
+  "include": ["src"]
+}

@@ -247,6 +247,40 @@ test('should respect issue exclude for typescript-go diagnostics', async () => {
   expect(logs.find((log) => log.includes('TS2345'))).toBeFalsy();
 });
 
+test('should build unbuilt project references with typescript-go in write-references mode', async () => {
+  const outputDir = resolve(__dirname, '__fixtures__/tsgo-references/dist');
+
+  await rm(outputDir, { recursive: true, force: true });
+
+  try {
+    const rsbuild = await createRsbuild({
+      rsbuildConfig: {
+        tools: {
+          rspack: {
+            plugins: [
+              new TsCheckerRspackPlugin({
+                typescript: {
+                  build: true,
+                  configFile: './tsconfig.tsgo.references.json',
+                  mode: 'write-references',
+                  tsgo: true,
+                },
+              }),
+            ],
+          },
+        },
+      },
+    });
+
+    await expect(rsbuild.build()).resolves.toBeTruthy();
+    await expect(stat(resolve(outputDir, 'app/index.js'))).resolves.toBeTruthy();
+    await expect(stat(resolve(outputDir, 'reference/index.js'))).resolves.toBeTruthy();
+    await expect(stat(resolve(outputDir, 'reference/index.d.ts'))).resolves.toBeTruthy();
+  } finally {
+    await rm(outputDir, { recursive: true, force: true });
+  }
+});
+
 test('should rerun typescript-go on rebuild and update incremental build info', async () => {
   const { logs, restore } = proxyConsole();
 
