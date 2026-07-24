@@ -1,28 +1,40 @@
+import {
+  mkdtempSync,
+  mkdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import * as os from 'node:os';
+import path from 'node:path';
 
-import mockFs from 'mock-fs';
 import { createCodeFrameFormatter } from 'src/formatter';
 import type { Issue } from 'src/issue';
 
-// TODO: fix this test
-describe.skip('formatter/code-frame-formatter', () => {
+describe('formatter/code-frame-formatter', () => {
+  let fixtureRoot: string;
+  let sourceFile: string;
+
   beforeEach(() => {
-    mockFs({
-      src: {
-        'index.ts': [
-          'const foo: number = "1";',
-          'const bar = 1;',
-          '',
-          'function baz() {',
-          '  console.log(baz);',
-          '}',
-        ].join('\n'),
-      },
-    });
+    fixtureRoot = mkdtempSync(path.join(os.tmpdir(), 'ts-checker-codeframe-'));
+    const sourceDirectory = path.join(fixtureRoot, 'src');
+    sourceFile = path.join(sourceDirectory, 'index.ts');
+
+    mkdirSync(sourceDirectory);
+    writeFileSync(
+      sourceFile,
+      [
+        'const foo: number = "1";',
+        'const bar = 1;',
+        '',
+        'function baz() {',
+        '  console.log(baz);',
+        '}',
+      ].join('\n'),
+    );
   });
 
   afterEach(() => {
-    mockFs.restore();
+    rmSync(fixtureRoot, { force: true, recursive: true });
   });
 
   it.each([
@@ -31,7 +43,7 @@ describe.skip('formatter/code-frame-formatter', () => {
         severity: 'error',
         code: 'TS2322',
         message: `Type '"1"' is not assignable to type 'number'.`,
-        file: 'src/index.ts',
+        file: 'SOURCE_FILE',
         location: {
           start: {
             line: 1,
@@ -55,7 +67,7 @@ describe.skip('formatter/code-frame-formatter', () => {
         severity: 'error',
         code: 'TS2322',
         message: `Type '"1"' is not assignable to type 'number'.`,
-        file: 'src/index.ts',
+        file: 'SOURCE_FILE',
       },
       `TS2322: Type '"1"' is not assignable to type 'number'.`,
     ],
@@ -64,7 +76,7 @@ describe.skip('formatter/code-frame-formatter', () => {
         severity: 'error',
         code: 'TS2322',
         message: `Type '"1"' is not assignable to type 'number'.`,
-        file: 'src/index.ts',
+        file: 'SOURCE_FILE',
         location: {
           start: {
             line: 1,
@@ -100,6 +112,9 @@ describe.skip('formatter/code-frame-formatter', () => {
     ],
   ])('formats issue message "%p" to "%p"', (...args) => {
     const [issue, expectedFormatted] = args as [Issue, string];
+    if (issue.file === 'SOURCE_FILE') {
+      issue.file = sourceFile;
+    }
     const formatter = createCodeFrameFormatter({
       linesAbove: 1,
       linesBelow: 1,
