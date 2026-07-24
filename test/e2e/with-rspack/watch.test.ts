@@ -157,7 +157,7 @@ test('does not rebuild for files excluded by Rspack watchOptions.ignored', async
         path: fixture.path('../ignored-watch-output'),
       },
       watchOptions: {
-        ignored: /[\\/]src[\\/]ignored[\\/]/,
+        ignored: /[\\/]src[\\/]ignored(?:[\\/]|$)/,
       },
     }),
   );

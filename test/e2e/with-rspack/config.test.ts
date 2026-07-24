@@ -1,4 +1,5 @@
-import { mkdir } from 'node:fs/promises';
+import { realpath } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 
 import { expect, test } from '@rstest/core';
 
@@ -108,9 +109,8 @@ test('applies configOverwrite to compiler options and root files', async () => {
 test('resolves configFile and context independently from process.cwd()', async () => {
   const fixture = await createFixture('basic');
   const originalCwd = process.cwd();
-  const nestedCwd = fixture.path('.cwd');
+  const independentCwd = await realpath(tmpdir());
 
-  await mkdir(nestedCwd);
   await fixture.remove('tsconfig.json');
   await fixture.write(
     'config/tsconfig.json',
@@ -147,7 +147,7 @@ test('resolves configFile and context independently from process.cwd()', async (
   };
 
   try {
-    process.chdir(nestedCwd);
+    process.chdir(independentCwd);
 
     let stats = await runContextCompiler();
     expect(stats.hasErrors()).toBe(false);
