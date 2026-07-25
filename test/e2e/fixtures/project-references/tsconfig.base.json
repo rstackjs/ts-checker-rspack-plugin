@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "sourceMap": true,
+    "strict": true,
+    "target": "ES2020"
+  }
+}
