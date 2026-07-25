@@ -120,8 +120,20 @@ function getRealPath(path: string) {
     let nested = '';
 
     while (base !== dirname(base)) {
+      const cachedBase = realPathCache.get(base);
+      if (cachedBase) {
+        realPathCache.set(normalizedPath, normalize(join(cachedBase, nested)));
+        break;
+      }
+
       if (exists(base)) {
-        realPathCache.set(normalizedPath, normalize(join(fs.realpathSync(base), nested)));
+        const realBase = normalize(fs.realpathSync(base));
+
+        // Cache the existing ancestor as well as the requested path. TypeScript
+        // probes many non-existent extensions below the same directory during
+        // module resolution, so resolving that directory repeatedly is costly.
+        realPathCache.set(base, realBase);
+        realPathCache.set(normalizedPath, normalize(join(realBase, nested)));
         break;
       }
 
