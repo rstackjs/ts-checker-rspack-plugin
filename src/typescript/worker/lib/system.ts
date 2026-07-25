@@ -308,7 +308,12 @@ function getReadFileSystem(path: string) {
     }
   }
 
-  return passiveFileSystem;
+  // Before readonly mode produces in-memory output, all non-artifact reads can
+  // go directly to disk. Once the memory layer changes (for example, when a
+  // SolutionBuilder emits a referenced project), preserve the overlay behavior.
+  return mode === 'readonly' && !memFileSystem.hasChanges()
+    ? realFileSystem
+    : passiveFileSystem;
 }
 
 function getWriteFileSystem(path: string) {

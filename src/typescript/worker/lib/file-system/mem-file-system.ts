@@ -6,11 +6,26 @@ import { fs as mem } from 'memfs';
 import type { FileSystem } from './file-system';
 import { realFileSystem } from './real-file-system';
 
+interface MemFileSystem extends FileSystem {
+  /**
+   * Whether the in-memory layer may contain changes that should overlay files on disk.
+   */
+  hasChanges(): boolean;
+}
+
+// This flag is intentionally sticky: clearCache() only clears path caches and
+// does not remove files from memfs, so disk-only reads are no longer safe after
+// the first mutation.
+let hasChanges = false;
+
 /**
  * It's an implementation of FileSystem interface which reads and writes to the in-memory file system.
  */
-export const memFileSystem: FileSystem = {
+export const memFileSystem: MemFileSystem = {
   ...realFileSystem,
+  hasChanges() {
+    return hasChanges;
+  },
   exists(path: string) {
     return exists(realFileSystem.realPath(path));
   },
@@ -71,10 +86,12 @@ function readDir(path: string): Dirent[] {
 }
 
 function createDir(path: string) {
+  hasChanges = true;
   mem.mkdirSync(realFileSystem.normalizePath(path), { recursive: true });
 }
 
 function writeFile(path: string, data: string) {
+  hasChanges = true;
   if (!exists(dirname(path))) {
     createDir(dirname(path));
   }
@@ -83,12 +100,14 @@ function writeFile(path: string, data: string) {
 }
 
 function deleteFile(path: string) {
+  hasChanges = true;
   if (exists(path)) {
     mem.unlinkSync(realFileSystem.normalizePath(path));
   }
 }
 
 function updateTimes(path: string, atime: Date, mtime: Date) {
+  hasChanges = true;
   if (exists(path)) {
     mem.utimesSync(realFileSystem.normalizePath(path), atime, mtime);
   }
