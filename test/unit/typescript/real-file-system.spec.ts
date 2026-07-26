@@ -4,6 +4,8 @@ import path from 'node:path';
 
 type RealFileSystemModule = typeof import('src/typescript/worker/lib/file-system/real-file-system');
 
+const nativeRealpathSync = fs.realpathSync.native;
+
 let realFileSystem: RealFileSystemModule['realFileSystem'];
 
 describe('realFileSystem', () => {
@@ -26,7 +28,7 @@ describe('realFileSystem', () => {
   it('reuses a cached real path for non-existent siblings', () => {
     const parentDirectory = path.join(temporaryDirectory, 'parent');
     fs.mkdirSync(parentDirectory);
-    const realParentDirectory = fs.realpathSync(parentDirectory);
+    const realParentDirectory = nativeRealpathSync(parentDirectory);
 
     expect(realFileSystem.realPath(path.join(parentDirectory, 'first.ts'))).toBe(
       path.join(realParentDirectory, 'first.ts'),
@@ -53,6 +55,6 @@ describe('realFileSystem', () => {
 
     realFileSystem.realPath(path.join(parentDirectory, 'missing.ts'));
 
-    expect(realFileSystem.realPath(linkedDirectory)).toBe(fs.realpathSync(targetDirectory));
+    expect(realFileSystem.realPath(linkedDirectory)).toBe(nativeRealpathSync(targetDirectory));
   });
 });
