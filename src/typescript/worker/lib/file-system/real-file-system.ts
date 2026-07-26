@@ -16,16 +16,16 @@ const realPathCache = new Map<string, string>();
  */
 export const realFileSystem: FileSystem = {
   exists(path: string) {
-    return exists(getRealPath(path));
+    return exists(path);
   },
   readFile(path: string, encoding?: string) {
-    return readFile(getRealPath(path), encoding);
+    return readFile(path, encoding);
   },
   readDir(path: string) {
-    return readDir(getRealPath(path));
+    return readDir(path);
   },
   readStats(path: string) {
-    return readStats(getRealPath(path));
+    return readStats(path);
   },
   realPath(path: string) {
     return getRealPath(path);
@@ -86,7 +86,7 @@ function readFile(path: string, encoding?: string): string | undefined {
     if (stats && stats.isFile()) {
       readFileCache.set(
         normalizedPath,
-        fs.readFileSync(normalizedPath, { encoding: encoding as BufferEncoding }).toString()
+        fs.readFileSync(normalizedPath, { encoding: encoding as BufferEncoding }).toString(),
       );
     } else {
       readFileCache.set(normalizedPath, undefined);
@@ -127,7 +127,7 @@ function getRealPath(path: string) {
       }
 
       if (exists(base)) {
-        const realBase = normalize(fs.realpathSync(base));
+        const realBase = normalize(realpath(base));
 
         // Cache the existing ancestor as well as the requested path. TypeScript
         // probes many non-existent extensions below the same directory during
@@ -143,6 +143,26 @@ function getRealPath(path: string) {
   }
 
   return realPathCache.get(normalizedPath) || normalizedPath;
+}
+
+function fsRealPathHandlingLongPath(path: string): string {
+  return path.length < 260 ? fs.realpathSync.native(path) : fs.realpathSync(path);
+}
+
+// Keep this aligned with TypeScript's Node system implementation:
+// https://github.com/microsoft/TypeScript/pull/50306
+const fsRealpath = fs.realpathSync.native
+  ? process.platform === 'win32'
+    ? fsRealPathHandlingLongPath
+    : fs.realpathSync.native
+  : fs.realpathSync;
+
+function realpath(path: string): string {
+  try {
+    return fsRealpath(path);
+  } catch {
+    return path;
+  }
 }
 
 function createDir(path: string) {

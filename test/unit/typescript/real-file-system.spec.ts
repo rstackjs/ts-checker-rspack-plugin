@@ -2,27 +2,31 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import { realFileSystem } from 'src/typescript/worker/lib/file-system/real-file-system';
+type RealFileSystemModule = typeof import('src/typescript/worker/lib/file-system/real-file-system');
+
+let realFileSystem: RealFileSystemModule['realFileSystem'];
 
 describe('realFileSystem', () => {
   let temporaryDirectory: string;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-checker-real-fs-'));
-    realFileSystem.clearCache();
+    rs.spyOn(fs.realpathSync, 'native');
+    rs.resetModules();
+    ({ realFileSystem } = await import('src/typescript/worker/lib/file-system/real-file-system'));
   });
 
   afterEach(() => {
     realFileSystem.clearCache();
     fs.rmSync(temporaryDirectory, { recursive: true, force: true });
     rs.restoreAllMocks();
+    rs.resetModules();
   });
 
   it('reuses a cached real path for non-existent siblings', () => {
     const parentDirectory = path.join(temporaryDirectory, 'parent');
     fs.mkdirSync(parentDirectory);
     const realParentDirectory = fs.realpathSync(parentDirectory);
-    const realpathSpy = rs.spyOn(fs, 'realpathSync');
 
     expect(realFileSystem.realPath(path.join(parentDirectory, 'first.ts'))).toBe(
       path.join(realParentDirectory, 'first.ts'),
@@ -31,8 +35,8 @@ describe('realFileSystem', () => {
       path.join(realParentDirectory, 'second.ts'),
     );
 
-    expect(realpathSpy).toHaveBeenCalledTimes(1);
-    expect(realpathSpy).toHaveBeenCalledWith(parentDirectory);
+    expect(fs.realpathSync.native).toHaveBeenCalledTimes(1);
+    expect(fs.realpathSync.native).toHaveBeenCalledWith(parentDirectory);
   });
 
   it('still resolves an existing symlink below a cached parent path', () => {
