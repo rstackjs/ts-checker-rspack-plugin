@@ -1,10 +1,11 @@
 import type { Dirent, Stats } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
-
-import { fs as mem } from 'memfs';
 
 import type { FileSystem } from './file-system';
 import { realFileSystem } from './real-file-system';
+
+type MemoryFileSystem = (typeof import('memfs'))['fs'];
 
 interface MemFileSystem extends FileSystem {
   /**
@@ -17,6 +18,19 @@ interface MemFileSystem extends FileSystem {
 // does not remove files from memfs, so disk-only reads are no longer safe after
 // the first mutation.
 let hasChanges = false;
+let mem: MemoryFileSystem | undefined;
+const requireModule = createRequire(__filename);
+
+function getMemoryFileSystem(): MemoryFileSystem {
+  // Loading memfs initializes a complete virtual file system. Most readonly
+  // checks never use the overlay, so defer that work until the first access.
+  if (mem) {
+    return mem;
+  }
+
+  mem = requireModule('memfs').fs as MemoryFileSystem;
+  return mem;
+}
 
 /**
  * It's an implementation of FileSystem interface which reads and writes to the in-memory file system.
@@ -56,18 +70,20 @@ export const memFileSystem: MemFileSystem = {
 };
 
 function exists(path: string): boolean {
-  return mem.existsSync(realFileSystem.normalizePath(path));
+  return getMemoryFileSystem().existsSync(realFileSystem.normalizePath(path));
 }
 
 function readStats(path: string): Stats | undefined {
-  return exists(path) ? mem.statSync(realFileSystem.normalizePath(path)) : undefined;
+  return exists(path)
+    ? getMemoryFileSystem().statSync(realFileSystem.normalizePath(path))
+    : undefined;
 }
 
 function readFile(path: string, encoding?: string): string | undefined {
   const stats = readStats(path);
 
   if (stats && stats.isFile()) {
-    return mem
+    return getMemoryFileSystem()
       .readFileSync(realFileSystem.normalizePath(path), { encoding: encoding as BufferEncoding })
       .toString();
   }
@@ -77,7 +93,7 @@ function readDir(path: string): Dirent[] {
   const stats = readStats(path);
 
   if (stats && stats.isDirectory()) {
-    return mem.readdirSync(realFileSystem.normalizePath(path), {
+    return getMemoryFileSystem().readdirSync(realFileSystem.normalizePath(path), {
       withFileTypes: true,
     }) as Dirent[];
   }
@@ -87,7 +103,7 @@ function readDir(path: string): Dirent[] {
 
 function createDir(path: string) {
   hasChanges = true;
-  mem.mkdirSync(realFileSystem.normalizePath(path), { recursive: true });
+  getMemoryFileSystem().mkdirSync(realFileSystem.normalizePath(path), { recursive: true });
 }
 
 function writeFile(path: string, data: string) {
@@ -96,19 +112,19 @@ function writeFile(path: string, data: string) {
     createDir(dirname(path));
   }
 
-  mem.writeFileSync(realFileSystem.normalizePath(path), data);
+  getMemoryFileSystem().writeFileSync(realFileSystem.normalizePath(path), data);
 }
 
 function deleteFile(path: string) {
   hasChanges = true;
   if (exists(path)) {
-    mem.unlinkSync(realFileSystem.normalizePath(path));
+    getMemoryFileSystem().unlinkSync(realFileSystem.normalizePath(path));
   }
 }
 
 function updateTimes(path: string, atime: Date, mtime: Date) {
   hasChanges = true;
   if (exists(path)) {
-    mem.utimesSync(realFileSystem.normalizePath(path), atime, mtime);
+    getMemoryFileSystem().utimesSync(realFileSystem.normalizePath(path), atime, mtime);
   }
 }
