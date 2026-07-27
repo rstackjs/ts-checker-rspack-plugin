@@ -24,7 +24,11 @@ const requireModule = createRequire(__filename);
 function getMemoryFileSystem(): MemoryFileSystem {
   // Loading memfs initializes a complete virtual file system. Most readonly
   // checks never use the overlay, so defer that work until the first access.
-  mem ||= requireModule('memfs').fs as MemoryFileSystem;
+  if (mem) {
+    return mem;
+  }
+
+  mem = requireModule('memfs').fs as MemoryFileSystem;
   return mem;
 }
 
