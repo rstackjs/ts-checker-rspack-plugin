@@ -102,7 +102,7 @@ function tapStartToRunWorkers(
     state.aggregatedFilesChange = aggregatedFilesChange;
 
     // submit one at a time for a single compiler
-    state.issuesPromise = (state.issuesPromise || Promise.resolve())
+    const workerResultPromise = (state.issuesPromise || Promise.resolve())
       // resolve to undefined on error
       .catch(() => undefined)
       .then(() => {
@@ -115,10 +115,11 @@ function tapStartToRunWorkers(
         return issuesPool.submit(async () => {
           try {
             debug(`Running the getIssuesWorker, iteration ${iteration}.`);
-            const issues = await getIssuesWorker(
+            const result = await getIssuesWorker(
               aggregatedFilesChange,
               state.watching,
               config.issue.defaultSeverity,
+              !state.watching,
             );
             if (state.aggregatedFilesChange === aggregatedFilesChange) {
               state.aggregatedFilesChange = undefined;
@@ -126,7 +127,7 @@ function tapStartToRunWorkers(
             if (state.abortController === abortController) {
               state.abortController = undefined;
             }
-            return issues;
+            return result;
           } catch (error) {
             hooks.error.call(error, compilation);
             return undefined;
@@ -135,6 +136,14 @@ function tapStartToRunWorkers(
           }
         }, abortController.signal);
       });
+
+    state.issuesPromise = workerResultPromise.then((result) => result?.issues);
+
+    if (!state.watching) {
+      debug(`Reusing dependencies from the getIssuesWorker, iteration ${iteration}.`);
+      state.dependenciesPromise = workerResultPromise.then((result) => result?.dependencies);
+      return;
+    }
 
     debug(`Submitting the getDependenciesWorker to the pool, iteration ${iteration}.`);
     state.dependenciesPromise = dependenciesPool.submit(async () => {
