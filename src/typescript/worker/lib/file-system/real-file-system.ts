@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import type { FileSystem } from './file-system';
 
 const existsCache = new Map<string, boolean>();
+const normalizedPathCache = new Map<string, string>();
 const readStatsCache = new Map<string, Stats>();
 const readFileCache = new Map<string, string | undefined>();
 const readDirCache = new Map<string, Dirent[]>();
@@ -31,7 +32,7 @@ export const realFileSystem: FileSystem = {
     return getRealPath(path);
   },
   normalizePath(path: string) {
-    return normalize(path);
+    return normalizePath(path);
   },
   writeFile(path: string, data: string) {
     writeFile(getRealPath(path), data);
@@ -47,6 +48,7 @@ export const realFileSystem: FileSystem = {
   },
   clearCache() {
     existsCache.clear();
+    normalizedPathCache.clear();
     readStatsCache.clear();
     readFileCache.clear();
     readDirCache.clear();
@@ -56,20 +58,28 @@ export const realFileSystem: FileSystem = {
 
 // read methods
 function exists(path: string): boolean {
-  const normalizedPath = normalize(path);
+  const normalizedPath = normalizePath(path);
+  return existsNormalized(normalizedPath);
+}
 
-  if (!existsCache.has(normalizedPath)) {
-    existsCache.set(normalizedPath, fs.existsSync(normalizedPath));
+function existsNormalized(normalizedPath: string): boolean {
+  const cached = existsCache.get(normalizedPath);
+
+  if (cached !== undefined) {
+    return cached;
   }
 
-  return !!existsCache.get(normalizedPath);
+  const result = fs.existsSync(normalizedPath);
+  existsCache.set(normalizedPath, result);
+
+  return result;
 }
 
 function readStats(path: string): Stats | undefined {
-  const normalizedPath = normalize(path);
+  const normalizedPath = normalizePath(path);
 
   if (!readStatsCache.has(normalizedPath)) {
-    if (exists(normalizedPath)) {
+    if (existsNormalized(normalizedPath)) {
       readStatsCache.set(normalizedPath, fs.statSync(normalizedPath));
     }
   }
@@ -78,7 +88,7 @@ function readStats(path: string): Stats | undefined {
 }
 
 function readFile(path: string, encoding?: string): string | undefined {
-  const normalizedPath = normalize(path);
+  const normalizedPath = normalizePath(path);
 
   if (!readFileCache.has(normalizedPath)) {
     const stats = readStats(normalizedPath);
@@ -97,7 +107,7 @@ function readFile(path: string, encoding?: string): string | undefined {
 }
 
 function readDir(path: string): Dirent[] {
-  const normalizedPath = normalize(path);
+  const normalizedPath = normalizePath(path);
 
   if (!readDirCache.has(normalizedPath)) {
     const stats = readStats(normalizedPath);
@@ -113,7 +123,7 @@ function readDir(path: string): Dirent[] {
 }
 
 function getRealPath(path: string) {
-  const normalizedPath = normalize(path);
+  const normalizedPath = normalizePath(path);
 
   if (!realPathCache.has(normalizedPath)) {
     let base = normalizedPath;
@@ -122,18 +132,18 @@ function getRealPath(path: string) {
     while (base !== dirname(base)) {
       const cachedBase = realPathCache.get(base);
       if (cachedBase) {
-        realPathCache.set(normalizedPath, normalize(join(cachedBase, nested)));
+        realPathCache.set(normalizedPath, join(cachedBase, nested));
         break;
       }
 
-      if (exists(base)) {
-        const realBase = normalize(realpath(base));
+      if (existsNormalized(base)) {
+        const realBase = normalizePath(realpath(base));
 
         // Cache the existing ancestor as well as the requested path. TypeScript
         // probes many non-existent extensions below the same directory during
         // module resolution, so resolving that directory repeatedly is costly.
         realPathCache.set(base, realBase);
-        realPathCache.set(normalizedPath, normalize(join(realBase, nested)));
+        realPathCache.set(normalizedPath, join(realBase, nested));
         break;
       }
 
@@ -143,6 +153,17 @@ function getRealPath(path: string) {
   }
 
   return realPathCache.get(normalizedPath) || normalizedPath;
+}
+
+function normalizePath(path: string): string {
+  const cached = normalizedPathCache.get(path);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const normalizedPath = normalize(path);
+  normalizedPathCache.set(path, normalizedPath);
+  return normalizedPath;
 }
 
 function fsRealPathHandlingLongPath(path: string): string {
@@ -166,7 +187,7 @@ function realpath(path: string): string {
 }
 
 function createDir(path: string) {
-  const normalizedPath = normalize(path);
+  const normalizedPath = normalizePath(path);
 
   fs.mkdirSync(normalizedPath, { recursive: true });
 
@@ -181,7 +202,7 @@ function createDir(path: string) {
 }
 
 function writeFile(path: string, data: string) {
-  const normalizedPath = normalize(path);
+  const normalizedPath = normalizePath(path);
 
   if (!exists(dirname(normalizedPath))) {
     createDir(dirname(normalizedPath));
@@ -204,7 +225,7 @@ function writeFile(path: string, data: string) {
 
 function deleteFile(path: string) {
   if (exists(path)) {
-    const normalizedPath = normalize(path);
+    const normalizedPath = normalizePath(path);
 
     fs.unlinkSync(normalizedPath);
 
@@ -224,9 +245,9 @@ function deleteFile(path: string) {
 
 function updateTimes(path: string, atime: Date, mtime: Date) {
   if (exists(path)) {
-    const normalizedPath = normalize(path);
+    const normalizedPath = normalizePath(path);
 
-    fs.utimesSync(normalize(path), atime, mtime);
+    fs.utimesSync(normalizedPath, atime, mtime);
 
     // update cache
     if (readStatsCache.has(normalizedPath)) {
