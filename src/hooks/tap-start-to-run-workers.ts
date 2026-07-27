@@ -100,6 +100,7 @@ function tapStartToRunWorkers(
       );
     }
     state.aggregatedFilesChange = aggregatedFilesChange;
+    const reuseIssuesWorkerForDependencies = !state.watching || !config.async;
 
     // submit one at a time for a single compiler
     const workerResultPromise = (state.issuesPromise || Promise.resolve())
@@ -119,9 +120,9 @@ function tapStartToRunWorkers(
               aggregatedFilesChange,
               state.watching,
               config.issue.defaultSeverity,
-              // A single-run build already waits for diagnostics. Returning the
-              // dependency snapshot here avoids starting a second worker process.
-              !state.watching,
+              // Non-watch and synchronous watch builds already wait for diagnostics.
+              // Returning the dependencies here avoids starting a second worker.
+              reuseIssuesWorkerForDependencies,
             );
             if (state.aggregatedFilesChange === aggregatedFilesChange) {
               state.aggregatedFilesChange = undefined;
@@ -141,13 +142,13 @@ function tapStartToRunWorkers(
 
     state.issuesPromise = workerResultPromise.then((result) => result?.issues);
 
-    if (!state.watching) {
+    if (reuseIssuesWorkerForDependencies) {
       debug(`Reusing dependencies from the getIssuesWorker, iteration ${iteration}.`);
       state.dependenciesPromise = workerResultPromise.then((result) => result?.dependencies);
       return;
     }
 
-    // Keep dependency collection independent in watch mode so async diagnostics
+    // Keep dependency collection independent in async watch mode so diagnostics
     // can finish after the compilation without delaying dependency registration.
     debug(`Submitting the getDependenciesWorker to the pool, iteration ${iteration}.`);
     state.dependenciesPromise = dependenciesPool.submit(async () => {
