@@ -119,6 +119,8 @@ function tapStartToRunWorkers(
               aggregatedFilesChange,
               state.watching,
               config.issue.defaultSeverity,
+              // A single-run build already waits for diagnostics. Returning the
+              // dependency snapshot here avoids starting a second worker process.
               !state.watching,
             );
             if (state.aggregatedFilesChange === aggregatedFilesChange) {
@@ -145,6 +147,8 @@ function tapStartToRunWorkers(
       return;
     }
 
+    // Keep dependency collection independent in watch mode so async diagnostics
+    // can finish after the compilation without delaying dependency registration.
     debug(`Submitting the getDependenciesWorker to the pool, iteration ${iteration}.`);
     state.dependenciesPromise = dependenciesPool.submit(async () => {
       try {
