@@ -15,10 +15,11 @@ import {
 async function waitForInitialCompilation(
   recorder: CompilerRecorder,
 ): Promise<void> {
-  await Promise.all([
-    recorder.waitForBuildAfter(0),
-    recorder.waitForIssuesAfter(0, (issues) => issues.length === 0),
-  ]);
+  await recorder.waitForBuildAndIssueEventAfter(
+    0,
+    0,
+    (event) => event.issues.length === 0,
+  );
   await new Promise((resolveWait) => setTimeout(resolveWait, 100));
 }
 
@@ -172,11 +173,12 @@ test.each([{ async: false }, { async: true }])(
         '"version":"1.0.1"',
       );
 
-      const stats = await recorder.waitForBuildAfter(buildIndex);
-      const issueEvent = await recorder.waitForIssueEventAfter(
-        issueEventIndex,
-        (event) => event.compilation === stats.compilation,
-      );
+      const { issueEvent, stats } =
+        await recorder.waitForBuildAndIssueEventAfter(
+          buildIndex,
+          issueEventIndex,
+          () => true,
+        );
       const changes = recorder.changes.slice(changeIndex);
 
       expect(getStatsMessages(stats).errors).toEqual([]);

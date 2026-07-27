@@ -37,6 +37,12 @@ export interface CompilerRecorder {
   issueEvents: RecordedIssueEvent[];
   workerErrors: unknown[];
   waitForBuildAfter(index: number, timeout?: number): Promise<Stats>;
+  waitForBuildAndIssueEventAfter(
+    buildIndex: number,
+    issueEventIndex: number,
+    predicate: (event: RecordedIssueEvent) => boolean,
+    timeout?: number,
+  ): Promise<{ issueEvent: RecordedIssueEvent; stats: Stats }>;
   waitForChangesAfter(
     index: number,
     predicate: (change: RecordedFilesChange) => boolean,
@@ -65,6 +71,29 @@ export const typeScriptRule = {
     },
   },
 };
+
+function aggregateRecordedChanges(
+  changes: RecordedFilesChange[],
+): RecordedFilesChange {
+  const changedFiles = new Set<string>();
+  const deletedFiles = new Set<string>();
+
+  for (const change of changes) {
+    for (const file of change.changedFiles) {
+      changedFiles.add(file);
+      deletedFiles.delete(file);
+    }
+    for (const file of change.deletedFiles) {
+      changedFiles.delete(file);
+      deletedFiles.add(file);
+    }
+  }
+
+  return {
+    changedFiles: [...changedFiles],
+    deletedFiles: [...deletedFiles],
+  };
+}
 
 export function createRspackConfig(
   root: string,
@@ -127,20 +156,19 @@ export function recordCompiler(compiler: Compiler): CompilerRecorder {
   const issueEvents: RecordedIssueEvent[] = [];
   const workerErrors: unknown[] = [];
   const hooks = TsCheckerRspackPlugin.getCompilerHooks(compiler);
-  const compilationChanges = new WeakMap<object, RecordedFilesChange>();
+  let issueChangeIndex = 0;
 
   compiler.hooks.done.tap('TsCheckerRspackPluginE2ERecorder', (stats) => {
     builds.push(stats);
   });
   hooks.start.tapPromise(
     'TsCheckerRspackPluginE2ERecorder',
-    async (filesChange, compilation) => {
+    async (filesChange) => {
       const recordedChange = {
         changedFiles: [...(filesChange.changedFiles || [])],
         deletedFiles: [...(filesChange.deletedFiles || [])],
       };
       changes.push(recordedChange);
-      compilationChanges.set(compilation, recordedChange);
       return filesChange;
     },
   );
@@ -152,10 +180,10 @@ export function recordCompiler(compiler: Compiler): CompilerRecorder {
       severity: issue.severity,
     }));
     issues.push(recordedIssues);
+    const pendingChanges = changes.slice(issueChangeIndex);
+    issueChangeIndex = changes.length;
     issueEvents.push({
-      change: compilation
-        ? compilationChanges.get(compilation)
-        : undefined,
+      change: compilation ? aggregateRecordedChanges(pendingChanges) : undefined,
       compilation,
       issues: recordedIssues,
     });
@@ -175,6 +203,30 @@ export function recordCompiler(compiler: Compiler): CompilerRecorder {
       waitForValue(
         () => builds.slice(index).at(0),
         `a compilation after build ${index}`,
+        timeout,
+      ),
+    waitForBuildAndIssueEventAfter: (
+      buildIndex,
+      issueEventIndex,
+      predicate,
+      timeout,
+    ) =>
+      waitForValue(
+        () => {
+          for (const issueEvent of issueEvents.slice(issueEventIndex)) {
+            if (!predicate(issueEvent)) {
+              continue;
+            }
+            const stats = builds
+              .slice(buildIndex)
+              .find((build) => build.compilation === issueEvent.compilation);
+            if (stats) {
+              return { issueEvent, stats };
+            }
+          }
+          return undefined;
+        },
+        `a build after build ${buildIndex} with a correlated issue event after event ${issueEventIndex}`,
         timeout,
       ),
     waitForChangesAfter: (index, predicate, timeout) =>
