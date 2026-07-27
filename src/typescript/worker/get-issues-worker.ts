@@ -1,4 +1,5 @@
 import type { FilesChange } from '../../files-change';
+import type { FilesMatch } from '../../files-match';
 import type { Issue, IssueDefaultSeverity } from '../../issue';
 import { exposeRpc } from '../../rpc';
 
@@ -29,11 +30,17 @@ import { dumpTracingLegendIfNeeded } from './lib/tracing';
 import { invalidateTsBuildInfo } from './lib/tsbuildinfo';
 import { config } from './lib/worker-config';
 
+interface GetIssuesWorkerResult {
+  issues: Issue[];
+  dependencies?: FilesMatch;
+}
+
 const getIssuesWorker = async (
   change: FilesChange,
   watching: boolean,
   defaultSeverity: IssueDefaultSeverity,
-): Promise<Issue[]> => {
+  withDependencies = false,
+): Promise<GetIssuesWorkerResult> => {
   system.invalidateCache();
 
   if (didConfigFileChanged(change)) {
@@ -66,7 +73,10 @@ const getIssuesWorker = async (
   const parseConfigIssues = getParseConfigIssues(defaultSeverity);
   if (parseConfigIssues.length) {
     // report config parse issues and exit
-    return parseConfigIssues;
+    return {
+      issues: parseConfigIssues,
+      dependencies: withDependencies ? getDependencies() : undefined,
+    };
   }
 
   // use proper implementation based on the config
@@ -96,7 +106,10 @@ const getIssuesWorker = async (
   printPerformanceMeasuresIfNeeded();
   disablePerformanceIfNeeded();
 
-  return issues;
+  return {
+    issues,
+    dependencies: withDependencies ? getDependencies() : undefined,
+  };
 };
 
 exposeRpc(getIssuesWorker);
