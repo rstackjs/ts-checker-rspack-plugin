@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -6,6 +7,12 @@ import type { TypeScriptWorkerConfig } from 'src/typescript/type-script-worker-c
 
 describe('typescript/type-script-go-runner', () => {
   const tsgoPackageJsonPath = require.resolve('@typescript/native-preview/package.json');
+  const requireFromTypeScript7Example = createRequire(
+    path.resolve('examples/typescript-7/package.json'),
+  );
+  const typeScript7PackageJsonPath = requireFromTypeScript7Example.resolve(
+    'typescript/package.json',
+  );
   const projectContext = path.resolve('project');
   const config: TypeScriptWorkerConfig = {
     enabled: true,
@@ -87,15 +94,129 @@ describe('typescript/type-script-go-runner', () => {
     ]);
   });
 
-  it('creates coarse watcher dependencies without parsing tsconfig', async () => {
+  it('collects root files from tsgo showConfig', async () => {
+    const projectPath = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-checker-tsgo-project-'));
+    const srcPath = path.join(projectPath, 'src');
+    const configFile = path.join(projectPath, 'tsconfig.json');
+    tempDirs.push(projectPath);
+    fs.mkdirSync(srcPath, { recursive: true });
+    fs.writeFileSync(path.join(srcPath, 'index.ts'), 'export const value = 1;\n');
+    fs.writeFileSync(path.join(srcPath, 'excluded.ts'), 'export const excluded = 3;\n');
+    fs.writeFileSync(
+      configFile,
+      JSON.stringify({ include: ['src'], exclude: ['src/excluded.ts'] }),
+    );
+    const { getTypeScriptGoDependencies } = await import('src/typescript/type-script-go-runner');
+    const typeScript7Config = {
+      ...config,
+      configFile,
+      context: projectPath,
+      typescriptPath: typeScript7PackageJsonPath,
+      tsgoPackage: 'typescript' as const,
+    };
+    const extensions = [
+      '.ts',
+      '.tsx',
+      '.mts',
+      '.cts',
+      '.js',
+      '.jsx',
+      '.mjs',
+      '.cjs',
+      '.json',
+    ];
+
+    const dependencies = await getTypeScriptGoDependencies(typeScript7Config);
+
+    expect(new Set(dependencies.files)).toEqual(
+      new Set([configFile, path.join(srcPath, 'index.ts')]),
+    );
+    expect(dependencies.dirs).toEqual([projectPath]);
+    expect(new Set(dependencies.excluded)).toEqual(
+      new Set([
+        path.join(projectPath, 'node_modules'),
+        path.join(srcPath, 'excluded.ts'),
+      ]),
+    );
+    expect(dependencies.extensions).toEqual(extensions);
+  });
+
+  it('collects files from project references', async () => {
+    const workspacePath = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'ts-checker-tsgo-solution-'),
+    );
+    const projectPath = path.join(workspacePath, 'root');
+    const childPath = path.join(projectPath, 'packages/child');
+    const childSrcPath = path.join(childPath, 'src');
+    const configFile = path.join(projectPath, 'tsconfig.json');
+    const childConfigFile = path.join(childPath, 'tsconfig.json');
+    const childFile = path.join(childSrcPath, 'index.ts');
+    tempDirs.push(workspacePath);
+    fs.mkdirSync(projectPath, { recursive: true });
+    fs.mkdirSync(childSrcPath, { recursive: true });
+    fs.writeFileSync(
+      configFile,
+      JSON.stringify({
+        files: [],
+        references: [{ path: './packages/child' }],
+      }),
+    );
+    fs.writeFileSync(childConfigFile, JSON.stringify({ include: ['src'] }));
+    fs.writeFileSync(childFile, 'export const child = 1;\n');
     const { getTypeScriptGoDependencies } = await import('src/typescript/type-script-go-runner');
 
-    expect(getTypeScriptGoDependencies(config)).toEqual({
-      files: [config.configFile],
-      dirs: [config.context],
-      excluded: [path.join(config.context, 'node_modules')],
-      extensions: ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs', '.json'],
+    const dependencies = await getTypeScriptGoDependencies({
+      ...config,
+      build: true,
+      configFile,
+      context: projectPath,
+      typescriptPath: typeScript7PackageJsonPath,
+      tsgoPackage: 'typescript',
     });
+
+    expect(new Set(dependencies.files)).toEqual(
+      new Set([configFile, childConfigFile, childFile]),
+    );
+    expect(dependencies.dirs).toEqual([projectPath]);
+    expect(new Set(dependencies.excluded)).toEqual(
+      new Set([
+        path.join(projectPath, 'node_modules'),
+        path.join(childPath, 'node_modules'),
+      ]),
+    );
+  });
+
+  it('refreshes cached dependencies when the file list may change', async () => {
+    const configFile = path.join(projectContext, 'tsconfig.json');
+    const knownFile = path.join(projectContext, 'src/index.ts');
+    const referencedConfigFile = path.join(projectContext, 'packages/app/tsconfig.json');
+    const dependencies = {
+      files: [configFile, knownFile, referencedConfigFile],
+      dirs: [projectContext],
+      excluded: [],
+      extensions: ['.ts'],
+    };
+    const { shouldRefreshTypeScriptGoDependencies } =
+      await import('src/typescript/type-script-go-runner');
+
+    expect([
+      shouldRefreshTypeScriptGoDependencies(undefined, {}),
+      shouldRefreshTypeScriptGoDependencies(dependencies, {
+        changedFiles: [knownFile],
+      }),
+      shouldRefreshTypeScriptGoDependencies(dependencies, {
+        changedFiles: [referencedConfigFile],
+      }),
+      shouldRefreshTypeScriptGoDependencies(dependencies, {
+        changedFiles: [path.join(projectContext, 'src/new.ts')],
+      }),
+      shouldRefreshTypeScriptGoDependencies(dependencies, {
+        deletedFiles: [knownFile],
+      }),
+      shouldRefreshTypeScriptGoDependencies(dependencies, {
+        changedFiles: [path.join(projectContext, 'src/style.css')],
+      }),
+    ]).toEqual([true, false, true, true, true, false]);
   });
 
   it('resolves the tsgo package from an absolute package.json path', async () => {

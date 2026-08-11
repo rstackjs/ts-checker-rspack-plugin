@@ -116,6 +116,63 @@ test.each([{ async: false }, { async: true }])(
   20_000,
 );
 
+test(
+  'adds tsgo root files to watch dependencies',
+  async () => {
+    const fixture = await createFixture('basic');
+    await fixture.write(
+      'src/unbundled.ts',
+      'export const unbundled: number = 1;\n',
+    );
+
+    const compiler = createCompiler(
+      createRspackConfig(
+        fixture.root,
+        new TsCheckerRspackPlugin({
+          async: false,
+          typescript: { tsgo: true },
+        }),
+      ),
+    );
+    const recorder = recordCompiler(compiler);
+    const { watching, fatalErrors } = watchCompiler(compiler);
+
+    try {
+      await waitForInitialCompilation(recorder);
+      expect(
+        recorder.builds[0]?.compilation.fileDependencies.has(
+          fixture.path('src/unbundled.ts'),
+        ),
+      ).toBe(true);
+
+      const issueEventIndex = recorder.issueEvents.length;
+      const buildIndex = recorder.builds.length;
+      await fixture.replace(
+        'src/unbundled.ts',
+        'unbundled: number = 1',
+        "unbundled: number = 'invalid'",
+      );
+      await recorder.waitForBuildAndIssueEventAfter(
+        buildIndex,
+        issueEventIndex,
+        (event) =>
+          Boolean(
+            event.change?.changedFiles.some((file) =>
+              file.replaceAll('\\', '/').endsWith('/src/unbundled.ts'),
+            ) && event.issues.some((issue) => issue.code === 'TS2322'),
+          ),
+      );
+
+      expect(fatalErrors).toEqual([]);
+      expect(recorder.workerErrors).toEqual([]);
+    } finally {
+      await closeWatching(watching);
+      await fixture.cleanup();
+    }
+  },
+  35_000,
+);
+
 test.each([{ async: false }, { async: true }])(
   'ignores package.json in incremental TypeScript changes when async is $async',
   async ({ async }) => {
