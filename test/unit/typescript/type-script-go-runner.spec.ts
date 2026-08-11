@@ -157,6 +157,7 @@ describe('typescript/type-script-go-runner', () => {
     fs.writeFileSync(
       configFile,
       JSON.stringify({
+        exclude: ['packages'],
         files: [],
         references: [{ path: './packages/child' }],
       }),

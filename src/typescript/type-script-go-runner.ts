@@ -451,7 +451,7 @@ async function getTypeScriptGoDependencies(
       files.add(path.normalize(path.resolve(configDir, file)));
     }
 
-    if (collectExcluded) {
+    if (collectExcluded && !parsedConfig.references?.length) {
       for (const exclude of parsedConfig.exclude || []) {
         excluded.add(path.normalize(path.resolve(configDir, exclude)));
       }
