@@ -9,4 +9,10 @@ export default defineConfig([
       '@typescript-eslint/no-require-imports': 'off',
     },
   },
+  {
+    files: ['test/**/*'],
+    rules: {
+      'no-undef': 'off',
+    },
+  },
 ]);
