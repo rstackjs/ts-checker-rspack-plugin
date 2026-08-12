@@ -1,11 +1,15 @@
-import { spawn } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { promisify } from 'node:util';
 
+import type { FilesChange } from '../files-change';
+import type { FilesMatch } from '../files-match';
 import type { Issue, IssueDefaultSeverity } from '../issue';
 import type { Logger } from '../logger';
 import { AbortError } from '../utils/async/abort-error';
+import { isInsideAnotherPath } from '../utils/path/is-inside-another-path';
 
 import type { TypeScriptWorkerConfig } from './type-script-worker-config';
 import {
@@ -18,6 +22,12 @@ import {
 type TypeScriptGoExecutable = {
   command: string;
   args: string[];
+};
+
+type TypeScriptGoShowConfig = {
+  exclude?: string[];
+  files?: string[];
+  references?: { path?: string }[];
 };
 
 function resolveTypeScriptGoPackageJsonPath(config: TypeScriptWorkerConfig): string {
@@ -82,6 +92,66 @@ async function resolveTypeScriptGoExecutable(
     command: binPath,
     args: [],
   };
+}
+
+async function runTypeScriptGoShowConfig(
+  executable: TypeScriptGoExecutable,
+  configFile: string,
+): Promise<TypeScriptGoShowConfig> {
+  // TS 7's JavaScript config API is still unstable. The stable CLI exposes the
+  // resolved root file list and project references through --showConfig.
+  const { stdout } = await promisify(execFile)(
+    executable.command,
+    [
+      ...executable.args,
+      '--project',
+      configFile,
+      '--showConfig',
+      '--pretty',
+      'false',
+    ],
+    {
+      cwd: path.dirname(configFile),
+      encoding: 'utf8',
+      maxBuffer: 64 * 1024 * 1024,
+    },
+  );
+
+  const parsedConfig: unknown = JSON.parse(stdout);
+  if (!parsedConfig || typeof parsedConfig !== 'object' || Array.isArray(parsedConfig)) {
+    throw new TypeError('Invalid tsgo --showConfig output.');
+  }
+
+  return parsedConfig as TypeScriptGoShowConfig;
+}
+
+function toComparisonPath(file: string): string {
+  const normalizedPath = path.normalize(file);
+  return process.platform === 'win32' ? normalizedPath.toLowerCase() : normalizedPath;
+}
+
+function shouldRefreshTypeScriptGoDependencies(
+  dependencies: FilesMatch | undefined,
+  { changedFiles = [], deletedFiles = [] }: FilesChange,
+): boolean {
+  if (!dependencies) {
+    return true;
+  }
+
+  const dependencyKeys = dependencies.files.map(toComparisonPath);
+
+  return (
+    changedFiles.some((file) => {
+      const key = toComparisonPath(file);
+      const extension = path.extname(file).toLowerCase();
+      return (
+        extension === '.json' ||
+        (dependencies.extensions.includes(extension) &&
+          !dependencyKeys.includes(key))
+      );
+    }) ||
+    deletedFiles.some((file) => dependencyKeys.includes(toComparisonPath(file)))
+  );
 }
 
 function createTypeScriptGoArgs(config: TypeScriptWorkerConfig) {
@@ -334,17 +404,92 @@ async function runTypeScriptGo(
   });
 }
 
-function getTypeScriptGoDependencies(config: TypeScriptWorkerConfig): {
-  files: string[];
-  dirs: string[];
-  excluded: string[];
-  extensions: string[];
-} {
+async function getTypeScriptGoDependencies(
+  config: TypeScriptWorkerConfig,
+): Promise<FilesMatch> {
+  const executable = await resolveTypeScriptGoExecutable(config);
+  const files = new Set<string>();
+  const dirs = new Set<string>();
+  const excluded = new Set<string>();
+  const visitedConfigs = new Set<string>();
+
+  const collectConfigDependencies = async (
+    configFile: string,
+    fallbackRoot: string,
+    collectExcluded: boolean,
+  ): Promise<void> => {
+    const normalizedConfigFile = path.normalize(configFile);
+    const configKey = toComparisonPath(normalizedConfigFile);
+    if (visitedConfigs.has(configKey)) {
+      return;
+    }
+    visitedConfigs.add(configKey);
+
+    const configDir = path.dirname(normalizedConfigFile);
+    const normalizedRoot = path.normalize(fallbackRoot);
+    files.add(normalizedConfigFile);
+    if (
+      !Array.from(dirs).some(
+        (dir) =>
+          path.relative(dir, normalizedRoot) === '' ||
+          isInsideAnotherPath(dir, normalizedRoot),
+      )
+    ) {
+      dirs.add(normalizedRoot);
+    }
+    excluded.add(path.join(normalizedRoot, 'node_modules'));
+
+    let parsedConfig: TypeScriptGoShowConfig | undefined;
+    try {
+      parsedConfig = await runTypeScriptGoShowConfig(executable, normalizedConfigFile);
+    } catch {
+      return;
+    }
+
+    // Equivalent to parsedConfig.fileNames in the TypeScript 6 code path.
+    for (const file of parsedConfig.files || []) {
+      files.add(path.normalize(path.resolve(configDir, file)));
+    }
+
+    if (collectExcluded && !parsedConfig.references?.length) {
+      for (const exclude of parsedConfig.exclude || []) {
+        excluded.add(path.normalize(path.resolve(configDir, exclude)));
+      }
+    }
+
+    for (const reference of parsedConfig.references || []) {
+      if (reference.path) {
+        const resolvedReference = path.resolve(configDir, reference.path);
+        const referenceConfig =
+          path.extname(resolvedReference).toLowerCase() === '.json'
+            ? resolvedReference
+            : path.join(resolvedReference, 'tsconfig.json');
+        await collectConfigDependencies(
+          referenceConfig,
+          path.dirname(referenceConfig),
+          false,
+        );
+      }
+    }
+  };
+
+  await collectConfigDependencies(config.configFile, config.context, true);
+
   return {
-    files: [config.configFile],
-    dirs: [config.context],
-    excluded: [path.join(config.context, 'node_modules')],
-    extensions: ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs', '.json'],
+    files: Array.from(files),
+    dirs: Array.from(dirs),
+    excluded: Array.from(excluded),
+    extensions: [
+      '.ts',
+      '.tsx',
+      '.mts',
+      '.cts',
+      '.js',
+      '.jsx',
+      '.mjs',
+      '.cjs',
+      '.json',
+    ],
   };
 }
 
@@ -360,4 +505,5 @@ export {
   resolveTypeScriptGoBinPath,
   resolveTypeScriptGoPackageJsonPath,
   runTypeScriptGo,
+  shouldRefreshTypeScriptGoDependencies,
 };

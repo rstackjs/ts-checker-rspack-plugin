@@ -2,6 +2,7 @@ import type * as rspack from '@rspack/core';
 
 import type { FilesChange } from '../files-change';
 import { aggregateFilesChanges, consumeFilesChange } from '../files-change';
+import type { FilesMatch } from '../files-match';
 import { getInfrastructureLogger } from '../infrastructure-logger';
 import type { TsCheckerRspackPluginConfig } from '../plugin-config';
 import { getPluginHooks } from '../plugin-hooks';
@@ -12,6 +13,7 @@ import {
   getTypeScriptGoDependencies,
   isTypeScriptGoStatsError,
   runTypeScriptGo,
+  shouldRefreshTypeScriptGoDependencies,
 } from '../typescript/type-script-go-runner';
 
 import { interceptDoneToGetDevServerTap } from './intercept-done-to-get-dev-server-tap';
@@ -51,6 +53,8 @@ function tapStartToRunTypeScriptGo(
   const hooks = getPluginHooks(compiler);
   const { log, debug } = getInfrastructureLogger(compiler);
   let assertTypeScriptGoExecutablePromise: Promise<void> | undefined;
+  let dependenciesPromise: Promise<FilesMatch> | undefined;
+  let dependenciesCacheGeneration = 0;
 
   const assertTypeScriptGoExecutableOnce = async () => {
     try {
@@ -186,9 +190,38 @@ function tapStartToRunTypeScriptGo(
       log('Calling tsgo for single check.');
     }
 
-    state.dependenciesPromise = Promise.resolve(getTypeScriptGoDependencies(config.typescript));
+    const cacheGeneration = ++dependenciesCacheGeneration;
+    const startPromise = hooks.start.promise(filesChange, compilation);
+    state.dependenciesPromise = startPromise.then((nextFilesChange) => {
+      if (cacheGeneration !== dependenciesCacheGeneration) {
+        return undefined;
+      }
 
-    filesChange = await hooks.start.promise(filesChange, compilation);
+      if (
+        state.watching &&
+        dependenciesPromise &&
+        !shouldRefreshTypeScriptGoDependencies(
+          state.lastDependencies,
+          nextFilesChange,
+        )
+      ) {
+        debug(`Reusing cached tsgo dependencies, iteration ${iteration}.`);
+        return dependenciesPromise;
+      }
+
+      const nextDependenciesPromise = getTypeScriptGoDependencies(config.typescript);
+      if (state.watching) {
+        dependenciesPromise = nextDependenciesPromise;
+        void nextDependenciesPromise.catch(() => {
+          if (dependenciesPromise === nextDependenciesPromise) {
+            dependenciesPromise = undefined;
+          }
+        });
+      }
+      return nextDependenciesPromise;
+    });
+
+    filesChange = await startPromise;
     let aggregatedFilesChange = filesChange;
     if (state.aggregatedFilesChange) {
       aggregatedFilesChange = aggregateFilesChanges([aggregatedFilesChange, filesChange]);
@@ -244,9 +277,15 @@ function tapStartToRunTypeScriptGo(
     }
   };
 
-  compiler.hooks.watchClose.tap('TsCheckerRspackPlugin', abortTypeScriptGo);
+  compiler.hooks.watchClose.tap('TsCheckerRspackPlugin', () => {
+    dependenciesCacheGeneration++;
+    dependenciesPromise = undefined;
+    abortTypeScriptGo();
+  });
 
   compiler.hooks.failed.tap('TsCheckerRspackPlugin', () => {
+    dependenciesCacheGeneration++;
+    dependenciesPromise = undefined;
     if (!state.watching) {
       abortTypeScriptGo();
     }
