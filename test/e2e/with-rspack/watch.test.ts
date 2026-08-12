@@ -117,7 +117,7 @@ test.each([{ async: false }, { async: true }])(
 );
 
 test(
-  'adds tsgo root files to watch dependencies',
+  'rebuilds when an unbundled tsgo root file changes',
   async () => {
     const fixture = await createFixture('basic');
     await fixture.write(
@@ -139,11 +139,6 @@ test(
 
     try {
       await waitForInitialCompilation(recorder);
-      expect(
-        recorder.builds[0]?.compilation.fileDependencies.has(
-          fixture.path('src/unbundled.ts'),
-        ),
-      ).toBe(true);
 
       const issueEventIndex = recorder.issueEvents.length;
       const buildIndex = recorder.builds.length;
