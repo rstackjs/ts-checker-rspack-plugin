@@ -5,8 +5,8 @@
     "setup": "playwright install chromium"
   },
   "devDependencies": {
-    "@babel/core": "^7.29.7",
-    "@babel/preset-typescript": "^7.29.7",
+    "@babel/core": "^8.0.1",
+    "@babel/preset-typescript": "^8.0.1",
     "@rsbuild/core": "^2.1.6",
     "@rspack/core": "^2.1.4",
     "@rspack/core-v1": "npm:@rspack/core@1.7.12",
