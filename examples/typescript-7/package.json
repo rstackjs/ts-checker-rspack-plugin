@@ -8,9 +8,9 @@
     "build": "rspack build"
   },
   "devDependencies": {
-    "@rspack/cli": "^2.1.4",
-    "@rspack/core": "^2.1.4",
-    "@rspack/dev-server": "^2.1.0",
+    "@rspack/cli": "^2.1.10",
+    "@rspack/core": "^2.1.10",
+    "@rspack/dev-server": "^2.2.0",
     "ts-checker-rspack-plugin": "workspace:*",
     "typescript": "^7.0.2"
   }
