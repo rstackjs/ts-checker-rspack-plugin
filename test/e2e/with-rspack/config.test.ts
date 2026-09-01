@@ -1,7 +1,7 @@
 import { realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 
-import { expect, test } from '@rstest/core';
+import { expect, test } from 'rstack/test';
 
 import { TsCheckerRspackPlugin } from '../../../lib';
 import { createFixture } from '../helpers/fixture';
@@ -30,29 +30,17 @@ test('reloads TypeScript configuration changes in watch mode', { timeout: 30_000
     await recorder.waitForIssuesAfter(0, (issues) => issues.length === 0);
 
     let issueIndex = recorder.issues.length;
-    await fixture.replace(
-      'tsconfig.json',
-      '"lib": ["ES2020", "DOM"]',
-      '"lib": ["ES2020"]',
-    );
+    await fixture.replace('tsconfig.json', '"lib": ["ES2020", "DOM"]', '"lib": ["ES2020"]');
 
-    const withoutDom = await recorder.waitForIssuesAfter(
-      issueIndex,
-      (issues) =>
-        issues.some(
-          (issue) =>
-            issue.code === 'TS2584' &&
-            issue.message.includes("Cannot find name 'document'"),
-        ),
+    const withoutDom = await recorder.waitForIssuesAfter(issueIndex, (issues) =>
+      issues.some(
+        (issue) => issue.code === 'TS2584' && issue.message.includes("Cannot find name 'document'"),
+      ),
     );
     expect(withoutDom.filter((issue) => issue.code === 'TS2584')).toHaveLength(2);
 
     issueIndex = recorder.issues.length;
-    await fixture.replace(
-      'tsconfig.json',
-      '"lib": ["ES2020"]',
-      '"lib": ["ES2020", "DOM"]',
-    );
+    await fixture.replace('tsconfig.json', '"lib": ["ES2020"]', '"lib": ["ES2020", "DOM"]');
     await recorder.waitForIssuesAfter(issueIndex, (issues) => issues.length === 0);
 
     expect(fatalErrors).toEqual([]);

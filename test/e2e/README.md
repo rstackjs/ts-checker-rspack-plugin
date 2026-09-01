@@ -26,21 +26,21 @@ pnpm test:e2e
 
 ## Legacy coverage mapping
 
-| Legacy area | Current coverage |
-| --- | --- |
-| Published type definitions | `package-contract.test.ts` |
-| TypeScript config reload and overwrite | `with-rspack/config.test.ts` |
-| Independent `context`, `configFile`, and `cwd` | `with-rspack/config.test.ts` |
-| Custom formatter | `with-rspack/config.test.ts` plus formatter unit tests |
-| SolutionBuilder modes and project propagation | `with-rspack/build-and-emit.test.ts`, `with-rspack/watch.test.ts` |
-| TypeScript tracing | `with-rspack/tracing.test.ts` |
-| Watch add/change/delete/restore | `with-rspack/watch.test.ts` |
-| Incremental `package.json` handling | `with-rspack/watch.test.ts` |
-| Production output and declaration emission | `with-rspack/build-and-emit.test.ts` |
-| `ts-loader` and Babel transpilation | `with-rspack/loader-compat.test.ts` |
-| Rspack 1 and the TypeScript 5.0 test baseline | `with-rspack/version-compat.test.ts` |
-| Asynchronous dev-server overlay | `with-rsbuild/overlay.test.ts` |
-| Worker OOM messaging and restart | deterministic hook and RPC unit tests |
+| Legacy area                                    | Current coverage                                                  |
+| ---------------------------------------------- | ----------------------------------------------------------------- |
+| Published type definitions                     | `package-contract.test.ts`                                        |
+| TypeScript config reload and overwrite         | `with-rspack/config.test.ts`                                      |
+| Independent `context`, `configFile`, and `cwd` | `with-rspack/config.test.ts`                                      |
+| Custom formatter                               | `with-rspack/config.test.ts` plus formatter unit tests            |
+| SolutionBuilder modes and project propagation  | `with-rspack/build-and-emit.test.ts`, `with-rspack/watch.test.ts` |
+| TypeScript tracing                             | `with-rspack/tracing.test.ts`                                     |
+| Watch add/change/delete/restore                | `with-rspack/watch.test.ts`                                       |
+| Incremental `package.json` handling            | `with-rspack/watch.test.ts`                                       |
+| Production output and declaration emission     | `with-rspack/build-and-emit.test.ts`                              |
+| `ts-loader` and Babel transpilation            | `with-rspack/loader-compat.test.ts`                               |
+| Rspack 1 and the TypeScript 5.0 test baseline  | `with-rspack/version-compat.test.ts`                              |
+| Asynchronous dev-server overlay                | `with-rsbuild/overlay.test.ts`                                    |
+| Worker OOM messaging and restart               | deterministic hook and RPC unit tests                             |
 
 Webpack-only Node API and version permutations were intentionally not carried
 forward: the package supports Rspack, while focused smoke tests exercise the

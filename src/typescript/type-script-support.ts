@@ -3,10 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import type { TypeScriptWorkerConfig } from './type-script-worker-config';
-import {
-  getTsgoPackage,
-  readTsgoPackageJson,
-} from './type-script-go-package';
+import { getTsgoPackage, readTsgoPackageJson } from './type-script-go-package';
 import {
   TYPESCRIPT_PACKAGE,
   TYPESCRIPT_PACKAGE_JSON,
@@ -31,10 +28,7 @@ function isDefaultTypeScriptGoPath(typescriptPath: string): boolean {
     // silent catch
   }
 
-  if (
-    !path.isAbsolute(typescriptPath) ||
-    path.basename(typescriptPath) !== 'package.json'
-  ) {
+  if (!path.isAbsolute(typescriptPath) || path.basename(typescriptPath) !== 'package.json') {
     return false;
   }
 
@@ -66,10 +60,7 @@ function createTypeScriptGoSupportError(config: TypeScriptWorkerConfig, error?: 
 function assertTypeScriptGoSupport(config: TypeScriptWorkerConfig) {
   try {
     const tsgoPackageJsonPath = resolveTypeScriptGoPackageJsonPath(config);
-    const getExePathPath = path.resolve(
-      path.dirname(tsgoPackageJsonPath),
-      './lib/getExePath.js',
-    );
+    const getExePathPath = path.resolve(path.dirname(tsgoPackageJsonPath), './lib/getExePath.js');
 
     if (!fs.existsSync(getExePathPath)) {
       throw new Error();

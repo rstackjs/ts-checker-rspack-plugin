@@ -12,6 +12,5 @@ new TsCheckerRspackPlugin({
       syntactic: true,
     },
   },
-})
+});
 ```
-

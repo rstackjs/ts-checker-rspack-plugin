@@ -59,9 +59,7 @@ async function resolveTypeScriptGoNativeExecutablePath(
   const getExePath = getExePathModule.default || getExePathModule.getExePath;
 
   if (typeof getExePath !== 'function') {
-    throw new Error(
-      `Cannot resolve the native TypeScript executable from "${packageName}".`,
-    );
+    throw new Error(`Cannot resolve the native TypeScript executable from "${packageName}".`);
   }
 
   const executablePath = getExePath();
@@ -102,14 +100,7 @@ async function runTypeScriptGoShowConfig(
   // resolved root file list and project references through --showConfig.
   const { stdout } = await promisify(execFile)(
     executable.command,
-    [
-      ...executable.args,
-      '--project',
-      configFile,
-      '--showConfig',
-      '--pretty',
-      'false',
-    ],
+    [...executable.args, '--project', configFile, '--showConfig', '--pretty', 'false'],
     {
       cwd: path.dirname(configFile),
       encoding: 'utf8',
@@ -146,11 +137,9 @@ function shouldRefreshTypeScriptGoDependencies(
       const extension = path.extname(file).toLowerCase();
       return (
         extension === '.json' ||
-        (dependencies.extensions.includes(extension) &&
-          !dependencyKeys.includes(key))
+        (dependencies.extensions.includes(extension) && !dependencyKeys.includes(key))
       );
-    }) ||
-    deletedFiles.some((file) => dependencyKeys.includes(toComparisonPath(file)))
+    }) || deletedFiles.some((file) => dependencyKeys.includes(toComparisonPath(file)))
   );
 }
 
@@ -387,12 +376,7 @@ async function runTypeScriptGo(
           return;
         }
 
-        const issues = createTypeScriptGoExitIssues(
-          output,
-          exitSignal,
-          config,
-          defaultSeverity,
-        );
+        const issues = createTypeScriptGoExitIssues(output, exitSignal, config, defaultSeverity);
 
         if (issues.some(isTypeScriptGoIssue)) {
           logOutput(logger, output);
@@ -404,9 +388,7 @@ async function runTypeScriptGo(
   });
 }
 
-async function getTypeScriptGoDependencies(
-  config: TypeScriptWorkerConfig,
-): Promise<FilesMatch> {
+async function getTypeScriptGoDependencies(config: TypeScriptWorkerConfig): Promise<FilesMatch> {
   const executable = await resolveTypeScriptGoExecutable(config);
   const files = new Set<string>();
   const dirs = new Set<string>();
@@ -431,8 +413,7 @@ async function getTypeScriptGoDependencies(
     if (
       !Array.from(dirs).some(
         (dir) =>
-          path.relative(dir, normalizedRoot) === '' ||
-          isInsideAnotherPath(dir, normalizedRoot),
+          path.relative(dir, normalizedRoot) === '' || isInsideAnotherPath(dir, normalizedRoot),
       )
     ) {
       dirs.add(normalizedRoot);
@@ -464,11 +445,7 @@ async function getTypeScriptGoDependencies(
           path.extname(resolvedReference).toLowerCase() === '.json'
             ? resolvedReference
             : path.join(resolvedReference, 'tsconfig.json');
-        await collectConfigDependencies(
-          referenceConfig,
-          path.dirname(referenceConfig),
-          false,
-        );
+        await collectConfigDependencies(referenceConfig, path.dirname(referenceConfig), false);
       }
     }
   };
@@ -479,17 +456,7 @@ async function getTypeScriptGoDependencies(
     files: Array.from(files),
     dirs: Array.from(dirs),
     excluded: Array.from(excluded),
-    extensions: [
-      '.ts',
-      '.tsx',
-      '.mts',
-      '.cts',
-      '.js',
-      '.jsx',
-      '.mjs',
-      '.cjs',
-      '.json',
-    ],
+    extensions: ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs', '.json'],
   };
 }
 

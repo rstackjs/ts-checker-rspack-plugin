@@ -64,11 +64,11 @@ class TsCheckerRspackPlugin {
     const getIssuesWorker = createRpcWorker<GetIssuesWorker>(
       path.resolve(__dirname, './getIssuesWorker.js'),
       config.typescript,
-      config.typescript.memoryLimit
+      config.typescript.memoryLimit,
     );
     const getDependenciesWorker = createRpcWorker<GetDependenciesWorker>(
       path.resolve(__dirname, './getDependenciesWorker.js'),
-      config.typescript
+      config.typescript,
     );
 
     tapAfterEnvironmentToPatchWatching(compiler, state);

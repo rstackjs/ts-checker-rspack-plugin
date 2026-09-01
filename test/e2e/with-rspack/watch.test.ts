@@ -1,4 +1,4 @@
-import { expect, test } from '@rstest/core';
+import { expect, test } from 'rstack/test';
 
 import { TsCheckerRspackPlugin } from '../../../lib';
 import { createFixture } from '../helpers/fixture';
@@ -12,14 +12,8 @@ import {
   watchCompiler,
 } from '../helpers/rspack';
 
-async function waitForInitialCompilation(
-  recorder: CompilerRecorder,
-): Promise<void> {
-  await recorder.waitForBuildAndIssueEventAfter(
-    0,
-    0,
-    (event) => event.issues.length === 0,
-  );
+async function waitForInitialCompilation(recorder: CompilerRecorder): Promise<void> {
+  await recorder.waitForBuildAndIssueEventAfter(0, 0, (event) => event.issues.length === 0);
   await new Promise((resolveWait) => setTimeout(resolveWait, 100));
 }
 
@@ -95,14 +89,12 @@ test.each([{ async: false }, { async: true }])(
           '',
         ].join('\n'),
       );
-      const restoredEvent = await recorder.waitForIssueEventAfter(
-        issueEventIndex,
-        (event) =>
-          Boolean(
-            event.change?.changedFiles.some((file) =>
-              file.replaceAll('\\', '/').endsWith('/src/math.ts'),
-            ),
+      const restoredEvent = await recorder.waitForIssueEventAfter(issueEventIndex, (event) =>
+        Boolean(
+          event.change?.changedFiles.some((file) =>
+            file.replaceAll('\\', '/').endsWith('/src/math.ts'),
           ),
+        ),
       );
       expect(restoredEvent.issues).toEqual([]);
 
@@ -116,57 +108,47 @@ test.each([{ async: false }, { async: true }])(
   20_000,
 );
 
-test(
-  'rebuilds when an unbundled tsgo root file changes',
-  async () => {
-    const fixture = await createFixture('basic');
-    await fixture.write(
-      'src/unbundled.ts',
-      'export const unbundled: number = 1;\n',
-    );
+test('rebuilds when an unbundled tsgo root file changes', async () => {
+  const fixture = await createFixture('basic');
+  await fixture.write('src/unbundled.ts', 'export const unbundled: number = 1;\n');
 
-    const compiler = createCompiler(
-      createRspackConfig(
-        fixture.root,
-        new TsCheckerRspackPlugin({
-          async: false,
-          typescript: { tsgo: true },
-        }),
+  const compiler = createCompiler(
+    createRspackConfig(
+      fixture.root,
+      new TsCheckerRspackPlugin({
+        async: false,
+        typescript: { tsgo: true },
+      }),
+    ),
+  );
+  const recorder = recordCompiler(compiler);
+  const { watching, fatalErrors } = watchCompiler(compiler);
+
+  try {
+    await waitForInitialCompilation(recorder);
+
+    const issueEventIndex = recorder.issueEvents.length;
+    const buildIndex = recorder.builds.length;
+    await fixture.replace(
+      'src/unbundled.ts',
+      'unbundled: number = 1',
+      "unbundled: number = 'invalid'",
+    );
+    await recorder.waitForBuildAndIssueEventAfter(buildIndex, issueEventIndex, (event) =>
+      Boolean(
+        event.change?.changedFiles.some((file) =>
+          file.replaceAll('\\', '/').endsWith('/src/unbundled.ts'),
+        ) && event.issues.some((issue) => issue.code === 'TS2322'),
       ),
     );
-    const recorder = recordCompiler(compiler);
-    const { watching, fatalErrors } = watchCompiler(compiler);
 
-    try {
-      await waitForInitialCompilation(recorder);
-
-      const issueEventIndex = recorder.issueEvents.length;
-      const buildIndex = recorder.builds.length;
-      await fixture.replace(
-        'src/unbundled.ts',
-        'unbundled: number = 1',
-        "unbundled: number = 'invalid'",
-      );
-      await recorder.waitForBuildAndIssueEventAfter(
-        buildIndex,
-        issueEventIndex,
-        (event) =>
-          Boolean(
-            event.change?.changedFiles.some((file) =>
-              file.replaceAll('\\', '/').endsWith('/src/unbundled.ts'),
-            ) && event.issues.some((issue) => issue.code === 'TS2322'),
-          ),
-      );
-
-      expect(fatalErrors).toEqual([]);
-      expect(recorder.workerErrors).toEqual([]);
-    } finally {
-      await closeWatching(watching);
-      await fixture.cleanup();
-    }
-  },
-  35_000,
-);
+    expect(fatalErrors).toEqual([]);
+    expect(recorder.workerErrors).toEqual([]);
+  } finally {
+    await closeWatching(watching);
+    await fixture.cleanup();
+  }
+}, 35_000);
 
 test.each([{ async: false }, { async: true }])(
   'ignores package.json in incremental TypeScript changes when async is $async',
@@ -181,14 +163,8 @@ test.each([{ async: false }, { async: true }])(
         types: 'index.d.ts',
       }),
     );
-    await fixture.write(
-      'package/index.d.ts',
-      'export function sayHello(name: string): string;\n',
-    );
-    await fixture.write(
-      'package/index.js',
-      'exports.sayHello = (name) => `Hello ${name}`;\n',
-    );
+    await fixture.write('package/index.d.ts', 'export function sayHello(name: string): string;\n');
+    await fixture.write('package/index.js', 'exports.sayHello = (name) => `Hello ${name}`;\n');
     await fixture.write(
       'src/index.ts',
       [
@@ -219,18 +195,13 @@ test.each([{ async: false }, { async: true }])(
       const changeIndex = recorder.changes.length;
       const issueEventIndex = recorder.issueEvents.length;
 
-      await fixture.replace(
-        'package/package.json',
-        '"version":"1.0.0"',
-        '"version":"1.0.1"',
-      );
+      await fixture.replace('package/package.json', '"version":"1.0.0"', '"version":"1.0.1"');
 
-      const { issueEvent, stats } =
-        await recorder.waitForBuildAndIssueEventAfter(
-          buildIndex,
-          issueEventIndex,
-          () => true,
-        );
+      const { issueEvent, stats } = await recorder.waitForBuildAndIssueEventAfter(
+        buildIndex,
+        issueEventIndex,
+        () => true,
+      );
       const changes = recorder.changes.slice(changeIndex);
 
       expect(getStatsMessages(stats).errors).toEqual([]);
@@ -272,10 +243,7 @@ test.each([{ async: false }, { async: true }])(
       expect(await fixture.exists('types/index.d.ts')).toBe(true);
 
       let issueEventIndex = recorder.issueEvents.length;
-      await fixture.write(
-        'src/organization.ts',
-        'export const organization: number = 1;\n',
-      );
+      await fixture.write('src/organization.ts', 'export const organization: number = 1;\n');
       await waitForIssuesForFile(
         recorder,
         issueEventIndex,
@@ -313,9 +281,7 @@ test.each([{ async: false }, { async: true }])(
         (issues) => issues.length === 0,
       );
 
-      expect(await fixture.read('types/organization.d.ts')).toContain(
-        'organization: number',
-      );
+      expect(await fixture.read('types/organization.d.ts')).toContain('organization: number');
       expect(await fixture.exists('types/organization.js')).toBe(false);
       expect(fatalErrors).toEqual([]);
       expect(recorder.workerErrors).toEqual([]);
@@ -392,11 +358,7 @@ test('propagates SolutionBuilder diagnostics across referenced projects', async 
     );
 
     issueEventIndex = recorder.issueEvents.length;
-    await fixture.replace(
-      'packages/app/src/index.ts',
-      'double(2)',
-      "double('2')",
-    );
+    await fixture.replace('packages/app/src/index.ts', 'double(2)', "double('2')");
     await waitForIssuesForFile(
       recorder,
       issueEventIndex,
@@ -406,10 +368,7 @@ test('propagates SolutionBuilder diagnostics across referenced projects', async 
     );
 
     issueEventIndex = recorder.issueEvents.length;
-    await fixture.write(
-      'packages/app/src/nested/additional.ts',
-      'export const additional = 10;\n',
-    );
+    await fixture.write('packages/app/src/nested/additional.ts', 'export const additional = 10;\n');
     await waitForIssuesForFile(
       recorder,
       issueEventIndex,
@@ -431,9 +390,7 @@ test('propagates SolutionBuilder diagnostics across referenced projects', async 
       (issues) => issues.length === 0,
     );
 
-    expect(
-      await fixture.exists('packages/app/lib/nested/additional.d.ts'),
-    ).toBe(true);
+    expect(await fixture.exists('packages/app/lib/nested/additional.d.ts')).toBe(true);
     expect(fatalErrors).toEqual([]);
     expect(recorder.workerErrors).toEqual([]);
   } finally {

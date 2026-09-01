@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module';
 
-import { expect, test } from '@rstest/core';
+import { expect, test } from 'rstack/test';
 import type { Compiler, RspackPluginInstance } from '@rspack/core';
 import { rspack as rspackV1 } from '@rspack/core-v1';
 

@@ -5,10 +5,7 @@ import { createRpcWorker, RpcExitError } from 'src/rpc';
 describe('rpc/rpc-worker', () => {
   it('starts a fresh process for the next request after a worker exits', async () => {
     const worker = createRpcWorker<(action: 'pid' | 'exit') => number>(
-      path.resolve(
-        process.cwd(),
-        'test/unit/rpc/fixtures/restart-worker.cjs',
-      ),
+      path.resolve(process.cwd(), 'test/unit/rpc/fixtures/restart-worker.cjs'),
       {},
     );
 

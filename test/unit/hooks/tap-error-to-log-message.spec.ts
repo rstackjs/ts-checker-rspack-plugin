@@ -13,8 +13,7 @@ describe('hooks/tap-error-to-log-message', () => {
     },
     {
       signal: 'SIGINT',
-      expected:
-        'Issues checking service interrupted - If running in a docker container',
+      expected: 'Issues checking service interrupted - If running in a docker container',
     },
   ])('logs actionable worker exit guidance for $signal', ({ signal, expected }) => {
     const compiler = {} as Compiler;

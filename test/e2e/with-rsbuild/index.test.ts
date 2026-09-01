@@ -14,10 +14,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const buildFailedError = /build failed!|Rspack build failed\./;
 
 const createRsbuild = async (config: CreateRsbuildOptions) => {
-  const rsbuildConfig = mergeRsbuildConfig(
-    config.rsbuildConfig,
-    { server: { port: await getRandomPort() } },
-  );
+  const rsbuildConfig = mergeRsbuildConfig(config.rsbuildConfig, {
+    server: { port: await getRandomPort() },
+  });
 
   return await baseCreateRsbuild({
     cwd: __dirname,

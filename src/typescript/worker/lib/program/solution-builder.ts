@@ -9,8 +9,7 @@ import { typescript } from '../typescript';
 import { config } from '../worker-config';
 
 let solutionBuilderHost:
-  | ts.SolutionBuilderWithWatchHost<ts.SemanticDiagnosticsBuilderProgram>
-  | undefined;
+  ts.SolutionBuilderWithWatchHost<ts.SemanticDiagnosticsBuilderProgram> | undefined;
 let solutionBuilder: ts.SolutionBuilder<ts.SemanticDiagnosticsBuilderProgram> | undefined;
 let hostDiagnostics: ts.Diagnostic[] = [];
 const HOST_DIAGNOSTICS_KEY = `GLOBAL_${config.configFile}`;

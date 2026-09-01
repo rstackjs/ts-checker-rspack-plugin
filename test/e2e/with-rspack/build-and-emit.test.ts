@@ -1,4 +1,4 @@
-import { expect, test } from '@rstest/core';
+import { expect, test } from 'rstack/test';
 
 import { TsCheckerRspackPlugin } from '../../../lib';
 import { createFixture } from '../helpers/fixture';
@@ -18,9 +18,7 @@ test('writes declarations but leaves JavaScript emission to Rspack in write-dts 
       tsgo: false,
     },
   });
-  const compiler = createCompiler(
-    createRspackConfig(fixture.root, plugin, { mode: 'production' }),
-  );
+  const compiler = createCompiler(createRspackConfig(fixture.root, plugin, { mode: 'production' }));
 
   try {
     const stats = await runCompiler(compiler);
@@ -40,10 +38,7 @@ test.each([
   {
     name: 'default',
     mode: undefined,
-    expected: [
-      'packages/shared/lib/tsconfig.tsbuildinfo',
-      'packages/app/lib/tsconfig.tsbuildinfo',
-    ],
+    expected: ['packages/shared/lib/tsconfig.tsbuildinfo', 'packages/app/lib/tsconfig.tsbuildinfo'],
     absent: [
       'packages/shared/lib/index.js',
       'packages/shared/lib/index.d.ts',
@@ -55,18 +50,12 @@ test.each([
     name: 'readonly',
     mode: 'readonly',
     expected: [],
-    absent: [
-      'packages/shared/lib',
-      'packages/app/lib',
-    ],
+    absent: ['packages/shared/lib', 'packages/app/lib'],
   },
   {
     name: 'write-tsbuildinfo',
     mode: 'write-tsbuildinfo',
-    expected: [
-      'packages/shared/lib/tsconfig.tsbuildinfo',
-      'packages/app/lib/tsconfig.tsbuildinfo',
-    ],
+    expected: ['packages/shared/lib/tsconfig.tsbuildinfo', 'packages/app/lib/tsconfig.tsbuildinfo'],
     absent: [
       'packages/shared/lib/index.js',
       'packages/shared/lib/index.d.ts',
@@ -85,10 +74,7 @@ test.each([
       'packages/app/lib/index.d.ts',
       'packages/app/lib/index.d.ts.map',
     ],
-    absent: [
-      'packages/shared/lib/index.js',
-      'packages/app/lib/index.js',
-    ],
+    absent: ['packages/shared/lib/index.js', 'packages/app/lib/index.js'],
   },
   {
     name: 'write-references',

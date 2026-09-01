@@ -70,11 +70,13 @@ describe('typescript/type-script-support', () => {
   it('throws error if typescript is not installed', async () => {
     const { assertTypeScriptSupport } = await import('src/typescript/type-script-support');
 
-    expect(() => assertTypeScriptSupport({
-      ...configuration,
-      typescriptPath: 'typescript-404',
-    })).toThrowError(
-      'When you use TsCheckerRspackPlugin with typescript reporter enabled, you must install `typescript` package.'
+    expect(() =>
+      assertTypeScriptSupport({
+        ...configuration,
+        typescriptPath: 'typescript-404',
+      }),
+    ).toThrowError(
+      'When you use TsCheckerRspackPlugin with typescript reporter enabled, you must install `typescript` package.',
     );
   });
 
@@ -93,7 +95,7 @@ describe('typescript/type-script-support', () => {
           `Possible errors:`,
           '  - wrong `context` directory in Rspack configuration (if `configFile` is not set or is a relative path in the fork plugin configuration)',
           '  - wrong `typescript.configFile` path in the plugin configuration (should be a relative or absolute path)',
-        ].join(os.EOL)
+        ].join(os.EOL),
       );
     } finally {
       existsSyncSpy.mockRestore();
@@ -129,9 +131,8 @@ describe('typescript/type-script-support', () => {
 
   it('supports TypeScript package with native executable for tsgo', async () => {
     const packageJsonPath = createTypeScriptPackage('7.1.0');
-    const { assertTypeScriptGoExecutable, assertTypeScriptSupport } = await import(
-      'src/typescript/type-script-support'
-    );
+    const { assertTypeScriptGoExecutable, assertTypeScriptSupport } =
+      await import('src/typescript/type-script-support');
     const config = {
       ...configuration,
       typescriptPath: packageJsonPath,
@@ -152,9 +153,9 @@ describe('typescript/type-script-support', () => {
         ...configuration,
         typescriptPath: packageJsonPath,
         tsgo: false,
-      })
+      }),
     ).toThrowError(
-      "When you use TsCheckerRspackPlugin without `typescript.tsgo`, `typescript.typescriptPath` should point to a path like `require.resolve('typescript')`."
+      "When you use TsCheckerRspackPlugin without `typescript.tsgo`, `typescript.typescriptPath` should point to a path like `require.resolve('typescript')`.",
     );
   });
 
@@ -162,7 +163,7 @@ describe('typescript/type-script-support', () => {
     const existsSyncSpy = rs
       .spyOn(fs, 'existsSync')
       .mockImplementation(
-        (filePath) => !filePath.toString().replace(/\\/g, '/').endsWith('/lib/getExePath.js')
+        (filePath) => !filePath.toString().replace(/\\/g, '/').endsWith('/lib/getExePath.js'),
       );
     const { assertTypeScriptSupport } = await import('src/typescript/type-script-support');
     let error: Error | undefined;

@@ -9,11 +9,7 @@ import type * as rspack from '@rspack/core';
 describe('typescript/type-scripts-worker-config', () => {
   let compiler: rspack.Compiler;
   const context = path.resolve('webpack-context');
-  const customPreviewPackageJsonPath = path.resolve(
-    'custom',
-    'native-preview',
-    'package.json',
-  );
+  const customPreviewPackageJsonPath = path.resolve('custom', 'native-preview', 'package.json');
 
   const configuration: TypeScriptWorkerConfig = {
     enabled: true,
@@ -144,9 +140,8 @@ describe('typescript/type-scripts-worker-config', () => {
       },
     ],
   ])('creates configuration from options %p', async (options, expectedConfig) => {
-    const { createTypeScriptWorkerConfig } = await import(
-      'src/typescript/type-script-worker-config'
-    );
+    const { createTypeScriptWorkerConfig } =
+      await import('src/typescript/type-script-worker-config');
     const config = createTypeScriptWorkerConfig(compiler, options as TypeScriptWorkerOptions);
 
     expect(config).toEqual(expectedConfig);
@@ -163,9 +158,8 @@ describe('typescript/type-scripts-worker-config', () => {
       }));
 
     try {
-      const { createTypeScriptWorkerConfig } = await import(
-        'src/typescript/type-script-worker-config'
-      );
+      const { createTypeScriptWorkerConfig } =
+        await import('src/typescript/type-script-worker-config');
 
       expect(createTypeScriptWorkerConfig(compiler, {})).toEqual({
         ...configuration,
@@ -186,14 +180,13 @@ describe('typescript/type-scripts-worker-config', () => {
     const resolveRoot = createResolveRoot();
     createTypeScriptPackage('6.1.0', resolveRoot);
     const typescriptPath = require.resolve('typescript', { paths: [resolveRoot] });
-    const { createTypeScriptWorkerConfig } = await import(
-      'src/typescript/type-script-worker-config'
-    );
+    const { createTypeScriptWorkerConfig } =
+      await import('src/typescript/type-script-worker-config');
 
     expect(
       createTypeScriptWorkerConfig(compiler, {
         resolveRoot,
-      })
+      }),
     ).toEqual({
       ...configuration,
       resolveRoot,
@@ -207,14 +200,13 @@ describe('typescript/type-scripts-worker-config', () => {
     const packageJsonPath = require.resolve('typescript/package.json', {
       paths: [resolveRoot],
     });
-    const { createTypeScriptWorkerConfig } = await import(
-      'src/typescript/type-script-worker-config'
-    );
+    const { createTypeScriptWorkerConfig } =
+      await import('src/typescript/type-script-worker-config');
 
     expect(
       createTypeScriptWorkerConfig(compiler, {
         resolveRoot,
-      })
+      }),
     ).toEqual({
       ...configuration,
       resolveRoot,
@@ -228,15 +220,14 @@ describe('typescript/type-scripts-worker-config', () => {
     const resolveRoot = createResolveRoot();
     createTypeScriptPackage('7.1.0', resolveRoot);
     const packageJsonPath = createTypeScriptPackage('7.2.0');
-    const { createTypeScriptWorkerConfig } = await import(
-      'src/typescript/type-script-worker-config'
-    );
+    const { createTypeScriptWorkerConfig } =
+      await import('src/typescript/type-script-worker-config');
 
     expect(
       createTypeScriptWorkerConfig(compiler, {
         resolveRoot,
         typescriptPath: packageJsonPath,
-      })
+      }),
     ).toEqual({
       ...configuration,
       resolveRoot,
@@ -248,14 +239,13 @@ describe('typescript/type-scripts-worker-config', () => {
 
   it('infers tsgo when typescriptPath points to supported TypeScript package', async () => {
     const packageJsonPath = createTypeScriptPackage('7.1.0');
-    const { createTypeScriptWorkerConfig } = await import(
-      'src/typescript/type-script-worker-config'
-    );
+    const { createTypeScriptWorkerConfig } =
+      await import('src/typescript/type-script-worker-config');
 
     expect(
       createTypeScriptWorkerConfig(compiler, {
         typescriptPath: packageJsonPath,
-      })
+      }),
     ).toEqual({
       ...configuration,
       tsgo: true,
@@ -266,15 +256,14 @@ describe('typescript/type-scripts-worker-config', () => {
 
   it('uses configured TypeScript package path when tsgo is explicitly enabled', async () => {
     const packageJsonPath = createTypeScriptPackage('7.1.0');
-    const { createTypeScriptWorkerConfig } = await import(
-      'src/typescript/type-script-worker-config'
-    );
+    const { createTypeScriptWorkerConfig } =
+      await import('src/typescript/type-script-worker-config');
 
     expect(
       createTypeScriptWorkerConfig(compiler, {
         tsgo: true,
         typescriptPath: packageJsonPath,
-      })
+      }),
     ).toEqual({
       ...configuration,
       tsgo: true,
@@ -285,15 +274,14 @@ describe('typescript/type-scripts-worker-config', () => {
 
   it('does not infer tsgo from configured TypeScript package path when tsgo is disabled', async () => {
     const packageJsonPath = createTypeScriptPackage('7.1.0');
-    const { createTypeScriptWorkerConfig } = await import(
-      'src/typescript/type-script-worker-config'
-    );
+    const { createTypeScriptWorkerConfig } =
+      await import('src/typescript/type-script-worker-config');
 
     expect(
       createTypeScriptWorkerConfig(compiler, {
         tsgo: false,
         typescriptPath: packageJsonPath,
-      })
+      }),
     ).toEqual({
       ...configuration,
       tsgo: false,
