@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module';
 
-import { expect, test } from '@rstest/core';
+import { expect, test } from 'rstack/test';
 import type { RuleSetRule } from '@rspack/core';
 
 import { TsCheckerRspackPlugin } from '../../../lib';
@@ -60,9 +60,7 @@ test.each([
     const compiler = createCompiler(
       createRspackConfig(fixture.root, plugin, {
         module: {
-          rules: [
-            createLoaderRule(loader, fixture.path('tsconfig.json')),
-          ],
+          rules: [createLoaderRule(loader, fixture.path('tsconfig.json'))],
         },
       }),
     );

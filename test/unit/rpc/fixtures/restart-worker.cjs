@@ -5,12 +5,10 @@ process.on('message', (message) => {
       return;
     }
 
-    process.send(
-      {
-        type: 'resolve',
-        id: message.id,
-        value: process.pid,
-      },
-    );
+    process.send({
+      type: 'resolve',
+      id: message.id,
+      value: process.pid,
+    });
   }
 });

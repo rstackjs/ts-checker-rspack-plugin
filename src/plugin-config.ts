@@ -21,7 +21,7 @@ interface TsCheckerRspackPluginConfig {
 
 function createPluginConfig(
   compiler: rspack.Compiler,
-  options: TsCheckerRspackPluginOptions = {}
+  options: TsCheckerRspackPluginOptions = {},
 ): TsCheckerRspackPluginConfig {
   return {
     async: options.async === undefined ? compiler.options.mode === 'development' : options.async,

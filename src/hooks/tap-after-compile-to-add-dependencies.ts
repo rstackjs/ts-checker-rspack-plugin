@@ -21,7 +21,7 @@ const isStrictSubdir = (parent: string, child: string) => {
  **/
 function excludeOutputPath(
   dependencies: NonNullable<TsCheckerRspackPluginState['lastDependencies']>,
-  compiler: rspack.Compiler
+  compiler: rspack.Compiler,
 ) {
   const isContextIncluded = dependencies.dirs.includes(compiler.context);
   if (!isContextIncluded) {
@@ -54,7 +54,7 @@ function excludeOutputPath(
 function tapAfterCompileToAddDependencies(
   compiler: rspack.Compiler,
   config: TsCheckerRspackPluginConfig,
-  state: TsCheckerRspackPluginState
+  state: TsCheckerRspackPluginState,
 ) {
   const { debug } = getInfrastructureLogger(compiler);
 

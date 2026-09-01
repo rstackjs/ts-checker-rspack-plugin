@@ -1,6 +1,6 @@
 import { basename } from 'node:path';
 
-import { expect, test } from '@rstest/core';
+import { expect, test } from 'rstack/test';
 
 import { TsCheckerRspackPlugin } from '../../../lib';
 import { createFixture } from '../helpers/fixture';
@@ -34,9 +34,7 @@ test.each([{ build: false }, { build: true }])(
       const traceFiles = await fixture.list('traces');
 
       expect(getStatsMessages(stats).errors).toEqual([]);
-      expect(
-        traceFiles.some((file) => /^trace.*\.json$/.test(basename(file))),
-      ).toBe(true);
+      expect(traceFiles.some((file) => /^trace.*\.json$/.test(basename(file)))).toBe(true);
     } finally {
       await closeCompiler(compiler);
       await fixture.cleanup();

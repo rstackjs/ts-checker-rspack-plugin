@@ -73,9 +73,7 @@ function resolveTypeScriptRuntimeConfig(
   if (options.typescriptPath) {
     const tsgoPackage = resolveTypeScriptGoPackage(options.typescriptPath);
     const tsgo =
-      options.tsgo === undefined && tsgoPackage?.tsgoPackage === 'typescript'
-        ? true
-        : options.tsgo;
+      options.tsgo === undefined && tsgoPackage?.tsgoPackage === 'typescript' ? true : options.tsgo;
 
     return {
       typescriptPath: options.typescriptPath,
@@ -162,8 +160,6 @@ function createTypeScriptWorkerConfig(
   };
 }
 
-export {
-  createTypeScriptWorkerConfig,
-};
+export { createTypeScriptWorkerConfig };
 
 export type { TypeScriptWorkerConfig };

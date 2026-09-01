@@ -13,10 +13,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const fixturesDirectory = resolve(
-  dirname(fileURLToPath(import.meta.url)),
-  '../fixtures',
-);
+const fixturesDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '../fixtures');
 
 export interface TestFixture {
   root: string;
@@ -26,11 +23,7 @@ export interface TestFixture {
   path(relativePath: string): string;
   read(relativePath: string): Promise<string>;
   remove(relativePath: string): Promise<void>;
-  replace(
-    relativePath: string,
-    searchValue: string,
-    replaceValue: string,
-  ): Promise<void>;
+  replace(relativePath: string, searchValue: string, replaceValue: string): Promise<void>;
   write(relativePath: string, content: string): Promise<void>;
 }
 
@@ -81,8 +74,7 @@ export async function createFixture(name: string): Promise<TestFixture> {
 
       await writeFile(destination, current.replace(searchValue, replaceValue));
     },
-    remove: (relativePath) =>
-      rm(resolve(root, relativePath), { force: true, recursive: true }),
+    remove: (relativePath) => rm(resolve(root, relativePath), { force: true, recursive: true }),
     async exists(relativePath) {
       try {
         await access(resolve(root, relativePath));

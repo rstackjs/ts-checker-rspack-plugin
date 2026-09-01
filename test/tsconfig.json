@@ -1,18 +1,18 @@
 {
-	"compilerOptions": {
-		"target": "es6",
-		"module": "ESNext",
-		"lib": ["ES6"],
-		"moduleResolution": "Bundler",
-		"esModuleInterop": true,
-		"skipLibCheck": true,
-		"skipDefaultLibCheck": true,
-		"resolveJsonModule": true,
-		"types": ["@rstest/core/globals"],
-		"paths": {
-			"src/*": ["../src/*"]
-		}
-	},
-	"include": ["../src", "**/*.spec.ts"],
-	"exclude": ["node_modules"]
+  "compilerOptions": {
+    "target": "es6",
+    "module": "ESNext",
+    "lib": ["ES6"],
+    "moduleResolution": "Bundler",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "resolveJsonModule": true,
+    "types": ["rstack/test/globals"],
+    "paths": {
+      "src/*": ["../src/*"]
+    }
+  },
+  "include": ["../src", "**/*.spec.ts"],
+  "exclude": ["node_modules"]
 }

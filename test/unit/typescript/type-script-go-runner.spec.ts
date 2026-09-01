@@ -10,9 +10,8 @@ describe('typescript/type-script-go-runner', () => {
   const requireFromTypeScript7Example = createRequire(
     path.resolve('examples/typescript-7/package.json'),
   );
-  const typeScript7PackageJsonPath = requireFromTypeScript7Example.resolve(
-    'typescript/package.json',
-  );
+  const typeScript7PackageJsonPath =
+    requireFromTypeScript7Example.resolve('typescript/package.json');
   const projectContext = path.resolve('project');
   const config: TypeScriptWorkerConfig = {
     enabled: true,
@@ -114,17 +113,7 @@ describe('typescript/type-script-go-runner', () => {
       typescriptPath: typeScript7PackageJsonPath,
       tsgoPackage: 'typescript' as const,
     };
-    const extensions = [
-      '.ts',
-      '.tsx',
-      '.mts',
-      '.cts',
-      '.js',
-      '.jsx',
-      '.mjs',
-      '.cjs',
-      '.json',
-    ];
+    const extensions = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs', '.json'];
 
     const dependencies = await getTypeScriptGoDependencies(typeScript7Config);
 
@@ -133,18 +122,13 @@ describe('typescript/type-script-go-runner', () => {
     );
     expect(dependencies.dirs).toEqual([projectPath]);
     expect(new Set(dependencies.excluded)).toEqual(
-      new Set([
-        path.join(projectPath, 'node_modules'),
-        path.join(srcPath, 'excluded.ts'),
-      ]),
+      new Set([path.join(projectPath, 'node_modules'), path.join(srcPath, 'excluded.ts')]),
     );
     expect(dependencies.extensions).toEqual(extensions);
   });
 
   it('collects files from project references', async () => {
-    const workspacePath = fs.mkdtempSync(
-      path.join(os.tmpdir(), 'ts-checker-tsgo-solution-'),
-    );
+    const workspacePath = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-checker-tsgo-solution-'));
     const projectPath = path.join(workspacePath, 'root');
     const childPath = path.join(projectPath, 'packages/child');
     const childSrcPath = path.join(childPath, 'src');
@@ -175,15 +159,10 @@ describe('typescript/type-script-go-runner', () => {
       tsgoPackage: 'typescript',
     });
 
-    expect(new Set(dependencies.files)).toEqual(
-      new Set([configFile, childConfigFile, childFile]),
-    );
+    expect(new Set(dependencies.files)).toEqual(new Set([configFile, childConfigFile, childFile]));
     expect(dependencies.dirs).toEqual([projectPath]);
     expect(new Set(dependencies.excluded)).toEqual(
-      new Set([
-        path.join(projectPath, 'node_modules'),
-        path.join(childPath, 'node_modules'),
-      ]),
+      new Set([path.join(projectPath, 'node_modules'), path.join(childPath, 'node_modules')]),
     );
   });
 

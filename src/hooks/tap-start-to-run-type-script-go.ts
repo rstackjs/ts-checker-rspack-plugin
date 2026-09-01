@@ -200,10 +200,7 @@ function tapStartToRunTypeScriptGo(
       if (
         state.watching &&
         dependenciesPromise &&
-        !shouldRefreshTypeScriptGoDependencies(
-          state.lastDependencies,
-          nextFilesChange,
-        )
+        !shouldRefreshTypeScriptGoDependencies(state.lastDependencies, nextFilesChange)
       ) {
         debug(`Reusing cached tsgo dependencies, iteration ${iteration}.`);
         return dependenciesPromise;

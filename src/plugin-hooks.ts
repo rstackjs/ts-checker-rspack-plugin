@@ -29,7 +29,7 @@ type TsCheckerRspackPluginHooks = ReturnType<typeof createPluginHooks>;
 
 function forwardPluginHooks(
   source: TsCheckerRspackPluginHooks,
-  target: TsCheckerRspackPluginHooks
+  target: TsCheckerRspackPluginHooks,
 ) {
   source.start.tapPromise('TsCheckerRspackPlugin', target.start.promise);
   source.waiting.tap('TsCheckerRspackPlugin', target.waiting.call);

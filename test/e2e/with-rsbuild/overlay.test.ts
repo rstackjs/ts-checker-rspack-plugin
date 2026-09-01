@@ -5,9 +5,7 @@ import { expect, test } from '@rstest/playwright';
 import { TsCheckerRspackPlugin } from '../../../lib';
 import { createFixture } from '../helpers/fixture';
 
-test('shows and clears asynchronous type errors in the browser overlay', async ({
-  page,
-}) => {
+test('shows and clears asynchronous type errors in the browser overlay', async ({ page }) => {
   const fixture = await createFixture('basic');
   const rsbuild = await createRsbuild({
     cwd: fixture.root,

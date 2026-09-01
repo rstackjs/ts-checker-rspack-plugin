@@ -1,9 +1,6 @@
 import path from 'node:path';
 
-import {
-  TYPESCRIPT_PACKAGE,
-  TYPESCRIPT_PREVIEW_PACKAGE,
-} from './type-script-go-constants';
+import { TYPESCRIPT_PACKAGE, TYPESCRIPT_PREVIEW_PACKAGE } from './type-script-go-constants';
 
 type TypeScriptGoPackage = 'typescript' | 'preview';
 
@@ -41,10 +38,7 @@ function getTsgoPackage(packageJson: TypeScriptGoPackageJson): TypeScriptGoPacka
 function resolveTypeScriptGoPackage(
   packageJsonPath: string,
 ): ResolvedTypeScriptGoPackage | undefined {
-  if (
-    !path.isAbsolute(packageJsonPath) ||
-    path.basename(packageJsonPath) !== 'package.json'
-  ) {
+  if (!path.isAbsolute(packageJsonPath) || path.basename(packageJsonPath) !== 'package.json') {
     return undefined;
   }
 
@@ -57,14 +51,6 @@ function resolveTypeScriptGoPackage(
   }
 }
 
-export {
-  getTsgoPackage,
-  readTsgoPackageJson,
-  resolveTypeScriptGoPackage,
-};
+export { getTsgoPackage, readTsgoPackageJson, resolveTypeScriptGoPackage };
 
-export type {
-  ResolvedTypeScriptGoPackage,
-  TypeScriptGoPackage,
-  TypeScriptGoPackageJson,
-};
+export type { ResolvedTypeScriptGoPackage, TypeScriptGoPackage, TypeScriptGoPackageJson };

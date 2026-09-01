@@ -1,17 +1,10 @@
 import { exec, execFile } from 'node:child_process';
-import {
-  mkdir,
-  mkdtemp,
-  readdir,
-  realpath,
-  rm,
-  writeFile,
-} from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 
-import { expect, test } from '@rstest/core';
+import { expect, test } from 'rstack/test';
 
 const execFileAsync = promisify(execFile);
 const execAsync = promisify(exec);
@@ -25,19 +18,13 @@ function execPnpm(args: string[], cwd: string) {
   return execPnpmWithCli(args, cwd, process.env.npm_execpath || null);
 }
 
-function execPnpmWithCli(
-  args: string[],
-  cwd: string,
-  pnpmCli: string | null,
-) {
+function execPnpmWithCli(args: string[], cwd: string, pnpmCli: string | null) {
   if (pnpmCli) {
     return execFileAsync(process.execPath, [pnpmCli, ...args], { cwd });
   }
 
   if (process.platform === 'win32') {
-    const command = ['pnpm', ...args.map(quoteWindowsCommandArgument)].join(
-      ' ',
-    );
+    const command = ['pnpm', ...args.map(quoteWindowsCommandArgument)].join(' ');
     return execAsync(command, {
       cwd,
       shell: process.env.ComSpec || 'cmd.exe',
@@ -49,9 +36,7 @@ function execPnpmWithCli(
 
 function quoteWindowsCommandArgument(argument: string): string {
   if (/[\0\r\n"%!]/.test(argument)) {
-    throw new Error(
-      `Unsupported character in pnpm argument: ${JSON.stringify(argument)}`,
-    );
+    throw new Error(`Unsupported character in pnpm argument: ${JSON.stringify(argument)}`);
   }
 
   return `"${argument}"`;
@@ -70,20 +55,11 @@ test('publishes a package whose TypeScript options are usable by consumers', asy
 
   try {
     await expect(
-      execPnpmWithCli(
-        ['--dir', temporaryDirectory, '--version'],
-        packageRoot,
-        null,
-      ),
+      execPnpmWithCli(['--dir', temporaryDirectory, '--version'], packageRoot, null),
     ).resolves.toBeDefined();
 
-    await execPnpm(
-      ['pack', '--pack-destination', packDirectory],
-      packageRoot,
-    );
-    const tarballName = (await readdir(packDirectory)).find((file) =>
-      file.endsWith('.tgz'),
-    );
+    await execPnpm(['pack', '--pack-destination', packDirectory], packageRoot);
+    const tarballName = (await readdir(packDirectory)).find((file) => file.endsWith('.tgz'));
     expect(tarballName).toBeTruthy();
 
     await writeFile(
@@ -94,10 +70,7 @@ test('publishes a package whose TypeScript options are usable by consumers', asy
         type: 'module',
         dependencies: {
           '@rspack/core': '2.1.4',
-          'ts-checker-rspack-plugin': `file:${join(
-            packDirectory,
-            tarballName!,
-          )}`,
+          'ts-checker-rspack-plugin': `file:${join(packDirectory, tarballName!)}`,
           typescript: '6.0.3',
         },
       }),
@@ -135,10 +108,7 @@ test('publishes a package whose TypeScript options are usable by consumers', asy
       ].join('\n'),
     );
 
-    await execPnpm(
-      ['install', '--prefer-offline', '--ignore-workspace'],
-      consumerDirectory,
-    );
+    await execPnpm(['install', '--prefer-offline', '--ignore-workspace'], consumerDirectory);
 
     let typeCheckFailure: CommandFailure | undefined;
     try {
@@ -148,9 +118,7 @@ test('publishes a package whose TypeScript options are usable by consumers', asy
     }
 
     expect(typeCheckFailure).toBeDefined();
-    expect(
-      `${typeCheckFailure?.stdout || ''}\n${typeCheckFailure?.stderr || ''}`,
-    ).toContain(
+    expect(`${typeCheckFailure?.stdout || ''}\n${typeCheckFailure?.stderr || ''}`).toContain(
       "Type 'string' is not assignable to type 'boolean | undefined'.",
     );
 
@@ -168,9 +136,7 @@ test('publishes a package whose TypeScript options are usable by consumers', asy
         '',
       ].join('\n'),
     );
-    await expect(
-      execPnpm(['exec', 'tsc', '--noEmit'], consumerDirectory),
-    ).resolves.toBeDefined();
+    await expect(execPnpm(['exec', 'tsc', '--noEmit'], consumerDirectory)).resolves.toBeDefined();
   } finally {
     await rm(temporaryDirectory, { force: true, recursive: true });
   }

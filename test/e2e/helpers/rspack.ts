@@ -72,9 +72,7 @@ export const typeScriptRule = {
   },
 };
 
-function aggregateRecordedChanges(
-  changes: RecordedFilesChange[],
-): RecordedFilesChange {
+function aggregateRecordedChanges(changes: RecordedFilesChange[]): RecordedFilesChange {
   const changedFiles = new Set<string>();
   const deletedFiles = new Set<string>();
 
@@ -161,17 +159,14 @@ export function recordCompiler(compiler: Compiler): CompilerRecorder {
   compiler.hooks.done.tap('TsCheckerRspackPluginE2ERecorder', (stats) => {
     builds.push(stats);
   });
-  hooks.start.tapPromise(
-    'TsCheckerRspackPluginE2ERecorder',
-    async (filesChange) => {
-      const recordedChange = {
-        changedFiles: [...(filesChange.changedFiles || [])],
-        deletedFiles: [...(filesChange.deletedFiles || [])],
-      };
-      changes.push(recordedChange);
-      return filesChange;
-    },
-  );
+  hooks.start.tapPromise('TsCheckerRspackPluginE2ERecorder', async (filesChange) => {
+    const recordedChange = {
+      changedFiles: [...(filesChange.changedFiles || [])],
+      deletedFiles: [...(filesChange.deletedFiles || [])],
+    };
+    changes.push(recordedChange);
+    return filesChange;
+  });
   hooks.issues.tap('TsCheckerRspackPluginE2ERecorder', (nextIssues, compilation) => {
     const recordedIssues = nextIssues.map((issue) => ({
       code: issue.code,
@@ -200,17 +195,8 @@ export function recordCompiler(compiler: Compiler): CompilerRecorder {
     issueEvents,
     workerErrors,
     waitForBuildAfter: (index, timeout) =>
-      waitForValue(
-        () => builds.slice(index).at(0),
-        `a compilation after build ${index}`,
-        timeout,
-      ),
-    waitForBuildAndIssueEventAfter: (
-      buildIndex,
-      issueEventIndex,
-      predicate,
-      timeout,
-    ) =>
+      waitForValue(() => builds.slice(index).at(0), `a compilation after build ${index}`, timeout),
+    waitForBuildAndIssueEventAfter: (buildIndex, issueEventIndex, predicate, timeout) =>
       waitForValue(
         () => {
           for (const issueEvent of issueEvents.slice(issueEventIndex)) {

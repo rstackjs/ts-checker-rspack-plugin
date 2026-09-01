@@ -14,15 +14,10 @@ async function loadSystem(mode: TypeScriptWorkerConfig['mode']) {
   });
   rs.resetModules();
 
-  const { memFileSystem } = await import(
-    'src/typescript/worker/lib/file-system/mem-file-system'
-  );
-  const { passiveFileSystem } = await import(
-    'src/typescript/worker/lib/file-system/passive-file-system'
-  );
-  const { realFileSystem } = await import(
-    'src/typescript/worker/lib/file-system/real-file-system'
-  );
+  const { memFileSystem } = await import('src/typescript/worker/lib/file-system/mem-file-system');
+  const { passiveFileSystem } =
+    await import('src/typescript/worker/lib/file-system/passive-file-system');
+  const { realFileSystem } = await import('src/typescript/worker/lib/file-system/real-file-system');
   const { system } = await import('src/typescript/worker/lib/system');
 
   return { memFileSystem, passiveFileSystem, realFileSystem, system };
@@ -50,12 +45,9 @@ describe('typescript system', () => {
   });
 
   it('keeps using the passive file system in write modes', async () => {
-    const { passiveFileSystem, realFileSystem, system } =
-      await loadSystem('write-tsbuildinfo');
+    const { passiveFileSystem, realFileSystem, system } = await loadSystem('write-tsbuildinfo');
     const realReadStats = rs.spyOn(realFileSystem, 'readStats');
-    const passiveReadStats = rs
-      .spyOn(passiveFileSystem, 'readStats')
-      .mockReturnValue(fileStats);
+    const passiveReadStats = rs.spyOn(passiveFileSystem, 'readStats').mockReturnValue(fileStats);
 
     expect(system.fileExists('/project/source.ts')).toBe(true);
     expect(passiveReadStats).toHaveBeenCalledWith('/project/source.ts');

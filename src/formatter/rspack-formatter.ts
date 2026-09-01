@@ -20,7 +20,7 @@ function createRspackFormatter(formatter: Formatter, pathType: FormatterPathType
       let location = pc.bold(
         pathType === 'absolute'
           ? forwardSlash(path.resolve(issue.file))
-          : relativeToContext(issue.file, process.cwd())
+          : relativeToContext(issue.file, process.cwd()),
       );
       if (issue.location) {
         location += `:${pc.bold(pc.green(formatIssueLocation(issue.location)))}`;

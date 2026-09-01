@@ -11,7 +11,11 @@ class IssueRspackError extends Error {
 
   file?: string;
 
-  constructor(message: string, pathType: FormatterPathType, readonly issue: Issue) {
+  constructor(
+    message: string,
+    pathType: FormatterPathType,
+    readonly issue: Issue,
+  ) {
     super(message);
 
     // to display issue location using `loc` property, Rspack requires `error.module` which

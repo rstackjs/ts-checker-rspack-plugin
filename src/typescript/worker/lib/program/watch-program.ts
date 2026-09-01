@@ -10,11 +10,9 @@ import { emitTsBuildInfoIfNeeded } from '../tsbuildinfo';
 import { typescript } from '../typescript';
 
 let watchCompilerHost:
-  | ts.WatchCompilerHostOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram>
-  | undefined;
+  ts.WatchCompilerHostOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram> | undefined;
 let watchProgram:
-  | ts.WatchOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram>
-  | undefined;
+  ts.WatchOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram> | undefined;
 let shouldUpdateRootFiles = false;
 
 export function useWatchProgram() {
@@ -29,7 +27,7 @@ export function useWatchProgram() {
         host,
         oldProgram,
         configFileParsingDiagnostics,
-        projectReferences
+        projectReferences,
       ) => {
         if (compilerOptions) {
           startTracingIfNeeded(compilerOptions);
@@ -40,7 +38,7 @@ export function useWatchProgram() {
           host,
           oldProgram,
           configFileParsingDiagnostics,
-          projectReferences
+          projectReferences,
         );
       },
       undefined,
@@ -48,12 +46,12 @@ export function useWatchProgram() {
       (builderProgram) => {
         updateDiagnostics(
           getConfigFilePathFromBuilderProgram(builderProgram),
-          getDiagnosticsOfProgram(builderProgram)
+          getDiagnosticsOfProgram(builderProgram),
         );
         emitDtsIfNeeded(builderProgram);
         emitTsBuildInfoIfNeeded(builderProgram);
         stopTracingIfNeeded(builderProgram);
-      }
+      },
     );
     watchProgram = undefined;
   }

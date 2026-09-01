@@ -13,15 +13,6 @@ type CodeframeFormatterOptions = {
   options?: BabelCodeFrameOptions;
 };
 type FormatterOptions =
-  | undefined
-  | FormatterType
-  | BasicFormatterOptions
-  | CodeframeFormatterOptions
-  | Formatter;
+  undefined | FormatterType | BasicFormatterOptions | CodeframeFormatterOptions | Formatter;
 
-export type {
-  FormatterOptions,
-  FormatterType,
-  BasicFormatterOptions,
-  CodeframeFormatterOptions,
-};
+export type { FormatterOptions, FormatterType, BasicFormatterOptions, CodeframeFormatterOptions };
