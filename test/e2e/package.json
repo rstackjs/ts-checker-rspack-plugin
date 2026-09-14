@@ -9,7 +9,7 @@
     "@babel/preset-typescript": "^7.29.7",
     "@rsbuild/core": "^2.2.1",
     "@rspack/core": "^2.2.1",
-    "@rspack/core-v1": "npm:@rspack/core@1.7.12",
+    "@rspack/core-v1": "npm:@rspack/core@2.2.4",
     "@rstest/playwright": "^0.11.11",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "babel-loader": "^10.1.1",
