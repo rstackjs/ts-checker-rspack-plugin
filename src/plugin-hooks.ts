@@ -18,7 +18,7 @@ function createPluginHooks() {
     waiting: new SyncHook<[rspack.Compilation]>(['compilation']),
     canceled: new SyncHook<[rspack.Compilation]>(['compilation']),
     error: new SyncHook<[unknown, rspack.Compilation]>(['error', 'compilation']),
-    issues: new SyncWaterfallHook<[Issue[], rspack.Compilation | undefined], void>([
+    issues: new SyncWaterfallHook<[Issue[], rspack.Compilation | undefined]>([
       'issues',
       'compilation',
     ]),

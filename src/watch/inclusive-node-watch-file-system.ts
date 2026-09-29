@@ -16,7 +16,7 @@ import type { WatchFileSystem } from './watch-file-system';
 const BUILTIN_IGNORED_DIRS = ['.git'];
 
 export function createIsIgnored(
-  ignored: string | RegExp | (string | RegExp)[] | undefined,
+  ignored: string | RegExp | (string | RegExp)[] | ((entry: string) => boolean) | undefined,
   excluded: string[],
 ): (path: string) => boolean {
   const ignoredPatterns = ignored ? (Array.isArray(ignored) ? [...ignored] : [ignored]) : [];
@@ -43,6 +43,8 @@ export function createIsIgnored(
       return (path: string) => minimatch(path, pattern);
     } else if (pattern instanceof RegExp) {
       return (path: string) => pattern.test(path);
+    } else if (typeof pattern === 'function') {
+      return pattern;
     } else {
       // fallback to no-ignore function
       return () => false;
