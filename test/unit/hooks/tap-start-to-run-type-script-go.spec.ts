@@ -6,13 +6,19 @@ import { tapStartToRunTypeScriptGo } from 'src/hooks/tap-start-to-run-type-scrip
 import type { TsCheckerRspackPluginConfig } from 'src/plugin-config';
 import { getPluginHooks } from 'src/plugin-hooks';
 import { createPluginState } from 'src/plugin-state';
-import { getTypeScriptGoDependencies, runTypeScriptGo } from 'src/typescript/type-script-go-runner';
+import {
+  getTypeScriptGoDependencies,
+  isTypeScriptGoIssue,
+  runTypeScriptGo,
+} from 'src/typescript/type-script-go-runner';
 
 rs.mock('src/typescript/type-script-go-runner', () => ({
   getTypeScriptGoDependencies: rs.fn(),
   runTypeScriptGo: rs.fn(),
   shouldRefreshTypeScriptGoDependencies: rs.fn(() => false),
+  isTypeScriptGoIssue: rs.fn((issue: { code: string }) => issue.code === 'TSGO'),
   isTypeScriptGoStatsError: rs.fn(() => false),
+  toComparisonPath: rs.fn((file: string) => file),
 }));
 
 const issue = {
@@ -162,6 +168,20 @@ it('retries after the native checker fails', async () => {
   await compile();
   await expect(state.issuesPromise).resolves.toBeUndefined();
   await compile(['/src/style.scss']);
+  await expect(state.issuesPromise).resolves.toEqual([issue]);
+  expect(runTypeScriptGo).toHaveBeenCalledTimes(2);
+});
+
+it('retries after tsgo returns an internal failure issue on style edits', async () => {
+  const { compile, state } = setup();
+  rs.mocked(runTypeScriptGo).mockResolvedValueOnce([
+    { code: 'TSGO', severity: 'error', message: 'tsgo check failed.' },
+  ]);
+  await compile();
+  await expect(state.issuesPromise).resolves.toMatchObject([{ code: 'TSGO' }]);
+
+  await compile(['/src/style.scss']);
+
   await expect(state.issuesPromise).resolves.toEqual([issue]);
   expect(runTypeScriptGo).toHaveBeenCalledTimes(2);
 });

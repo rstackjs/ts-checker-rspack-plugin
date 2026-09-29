@@ -199,6 +199,16 @@ describe('typescript/type-script-go-runner', () => {
     ]).toEqual([true, false, true, true, true, false]);
   });
 
+  it('normalizes Windows paths and compares them case-insensitively', async () => {
+    const { toComparisonPath } = await import('src/typescript/type-script-go-runner');
+    const dependencyPath = 'C:\\src\\STYLE.scss';
+    const watcherPath = 'c:/src/style.scss';
+
+    expect(toComparisonPath(dependencyPath) === toComparisonPath(watcherPath)).toBe(
+      process.platform === 'win32',
+    );
+  });
+
   it('resolves the tsgo package from an absolute package.json path', async () => {
     const { resolveTypeScriptGoPackageJsonPath } =
       await import('src/typescript/type-script-go-runner');
