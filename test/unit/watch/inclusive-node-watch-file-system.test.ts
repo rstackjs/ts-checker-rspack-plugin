@@ -30,6 +30,12 @@ describe('createIsIgnored', () => {
     expect(isIgnored(srcModulePath)).toBe(false);
   });
 
+  it('should use a function passed as the first argument', () => {
+    const isIgnored = createIsIgnored((path) => path.endsWith('/foo.ts'), []);
+    expect(isIgnored(srcModulePath)).toBe(true);
+    expect(isIgnored(distModulePath)).toBe(false);
+  });
+
   it('should allow to passing string path to the second argument', () => {
     // exclude: ["dist"] in tsconfig.json
     const isIgnored = createIsIgnored([], ['/path/to/dist']);
