@@ -129,7 +129,7 @@ function shouldRefreshTypeScriptGoDependencies(
     return true;
   }
 
-  const dependencyKeys = dependencies.files.map(toComparisonPath);
+  const dependencyKeys = dependencies.files.map((file) => toComparisonPath(file));
 
   return (
     changedFiles.some((file) => {
@@ -473,4 +473,5 @@ export {
   resolveTypeScriptGoPackageJsonPath,
   runTypeScriptGo,
   shouldRefreshTypeScriptGoDependencies,
+  toComparisonPath,
 };

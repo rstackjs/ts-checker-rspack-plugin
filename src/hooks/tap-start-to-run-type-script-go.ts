@@ -11,9 +11,11 @@ import type { TsCheckerRspackPluginState } from '../plugin-state';
 import { assertTypeScriptGoExecutable } from '../typescript/type-script-support';
 import {
   getTypeScriptGoDependencies,
+  isTypeScriptGoIssue,
   isTypeScriptGoStatsError,
   runTypeScriptGo,
   shouldRefreshTypeScriptGoDependencies,
+  toComparisonPath,
 } from '../typescript/type-script-go-runner';
 
 import { interceptDoneToGetDevServerTap } from './intercept-done-to-get-dev-server-tap';
@@ -167,6 +169,9 @@ function tapStartToRunTypeScriptGo(
 
     let filesChange: FilesChange = state.watching ? consumeFilesChange(compiler) : {};
     const changedFiles = [...(filesChange.changedFiles || []), ...(compiler.modifiedFiles || [])];
+    const dependencyPaths = new Set(
+      state.lastDependencies?.files.map((file) => toComparisonPath(file)),
+    );
 
     if (
       state.watching &&
@@ -177,7 +182,7 @@ function tapStartToRunTypeScriptGo(
       !compiler.removedFiles?.size &&
       changedFiles.length > 0 &&
       changedFiles.every(
-        (file) => STYLE_FILE.test(file) && !state.lastDependencies?.files.includes(file),
+        (file) => STYLE_FILE.test(file) && !dependencyPaths.has(toComparisonPath(file)),
       )
     ) {
       debug('Reusing tsgo issues for style-only changes.');
@@ -276,6 +281,9 @@ function tapStartToRunTypeScriptGo(
               state.aggregatedFilesChange = undefined;
             }
             if (state.abortController === abortController) {
+              if (issues.some(isTypeScriptGoIssue)) {
+                canReuseIssues = false;
+              }
               state.abortController = undefined;
             }
             return issues;
