@@ -21,6 +21,7 @@ import { tapAfterCompileToGetIssues } from './tap-after-compile-to-get-issues';
 import { tapDoneToAsyncGetIssues } from './tap-done-to-async-get-issues';
 
 const hiddenTypeScriptGoErrors = Symbol('hiddenTypeScriptGoErrors');
+const STYLE_FILE = /\.(css|scss|sass|less|styl)$/i;
 
 type StatsCompilationWithHiddenErrors = Record<PropertyKey, any>;
 
@@ -55,6 +56,7 @@ function tapStartToRunTypeScriptGo(
   let assertTypeScriptGoExecutablePromise: Promise<void> | undefined;
   let dependenciesPromise: Promise<FilesMatch> | undefined;
   let dependenciesCacheGeneration = 0;
+  let canReuseIssues = false;
 
   const assertTypeScriptGoExecutableOnce = async () => {
     try {
@@ -163,6 +165,28 @@ function tapStartToRunTypeScriptGo(
       });
     });
 
+    let filesChange: FilesChange = state.watching ? consumeFilesChange(compiler) : {};
+    const changedFiles = [...(filesChange.changedFiles || []), ...(compiler.modifiedFiles || [])];
+
+    if (
+      state.watching &&
+      canReuseIssues &&
+      state.lastDependencies &&
+      hooks.start.taps.length === 0 &&
+      !filesChange.deletedFiles?.length &&
+      !compiler.removedFiles?.size &&
+      changedFiles.length > 0 &&
+      changedFiles.every(
+        (file) => STYLE_FILE.test(file) && !state.lastDependencies?.files.includes(file),
+      )
+    ) {
+      debug('Reusing tsgo issues for style-only changes.');
+      // A fresh promise prevents older compilations from reporting the reused check again.
+      state.issuesPromise = state.issuesPromise.then((issues) => issues);
+      return;
+    }
+
+    canReuseIssues = false;
     const iteration = ++state.iteration;
 
     if (state.abortController) {
@@ -173,10 +197,7 @@ function tapStartToRunTypeScriptGo(
     const abortController = new AbortController();
     state.abortController = abortController;
 
-    let filesChange: FilesChange = {};
-
     if (state.watching) {
-      filesChange = consumeFilesChange(compiler);
       // This mirrors the existing reporter infrastructure log and is only visible
       // when infrastructureLogging enables TsCheckerRspackPlugin logs.
       log(
@@ -212,6 +233,7 @@ function tapStartToRunTypeScriptGo(
         void nextDependenciesPromise.catch(() => {
           if (dependenciesPromise === nextDependenciesPromise) {
             dependenciesPromise = undefined;
+            canReuseIssues = false;
           }
         });
       }
@@ -232,6 +254,7 @@ function tapStartToRunTypeScriptGo(
     }
     state.aggregatedFilesChange = aggregatedFilesChange;
 
+    canReuseIssues = true;
     state.issuesPromise = (state.issuesPromise || Promise.resolve())
       .catch(() => undefined)
       .then(() => {
@@ -257,6 +280,9 @@ function tapStartToRunTypeScriptGo(
             }
             return issues;
           } catch (error) {
+            if (state.abortController === abortController) {
+              canReuseIssues = false;
+            }
             hooks.error.call(error, compilation);
             return undefined;
           } finally {
@@ -275,12 +301,14 @@ function tapStartToRunTypeScriptGo(
   };
 
   compiler.hooks.watchClose.tap('TsCheckerRspackPlugin', () => {
+    canReuseIssues = false;
     dependenciesCacheGeneration++;
     dependenciesPromise = undefined;
     abortTypeScriptGo();
   });
 
   compiler.hooks.failed.tap('TsCheckerRspackPlugin', () => {
+    canReuseIssues = false;
     dependenciesCacheGeneration++;
     dependenciesPromise = undefined;
     if (!state.watching) {
