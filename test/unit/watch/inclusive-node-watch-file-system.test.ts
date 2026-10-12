@@ -1,4 +1,16 @@
-import { createIsIgnored } from '../../../src/watch/inclusive-node-watch-file-system';
+import assert from 'node:assert';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { rspack } from '@rspack/core';
+import chokidar, { type FSWatcher } from 'chokidar';
+
+import { createPluginState } from '../../../src/plugin-state';
+import {
+  createIsIgnored,
+  InclusiveNodeWatchFileSystem,
+} from '../../../src/watch/inclusive-node-watch-file-system';
 
 describe('createIsIgnored', () => {
   const gitPath = '/path/to/.git/foo';
@@ -95,5 +107,35 @@ describe('createIsIgnored', () => {
     expect(isIgnored(nodeModulesPath)).toBe(true);
     expect(isIgnored(distModulePath)).toBe(true);
     expect(isIgnored(srcModulePath)).toBe(false);
+  });
+});
+
+describe('InclusiveNodeWatchFileSystem', () => {
+  it.each([true, 50])('should watch dependency dirs with poll: %s', async (poll) => {
+    const dir = mkdtempSync(join(tmpdir(), 'ts-checker-watch-'));
+    const chokidarWatch = rs.spyOn(chokidar, 'watch');
+    const compiler = rspack({});
+    const pluginState = createPluginState();
+
+    pluginState.lastDependencies = { files: [], dirs: [dir], excluded: [], extensions: ['.ts'] };
+    assert(compiler.watchFileSystem);
+
+    const watching = new InclusiveNodeWatchFileSystem(
+      compiler.watchFileSystem,
+      compiler,
+      pluginState,
+    ).watch([], [], [], Date.now(), { poll }, rs.fn(), rs.fn());
+
+    const dirWatcher: FSWatcher = chokidarWatch.mock.results[0].value;
+    const errors: unknown[] = [];
+
+    dirWatcher.on('error', (error) => errors.push(error));
+    await new Promise((resolve) => dirWatcher.on('ready', resolve));
+
+    watching.close();
+    chokidarWatch.mockRestore();
+    rmSync(dir, { recursive: true, force: true });
+
+    expect(errors).toEqual([]);
   });
 });

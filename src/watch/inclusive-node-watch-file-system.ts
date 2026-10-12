@@ -165,8 +165,8 @@ class InclusiveNodeWatchFileSystem implements WatchFileSystem {
         ignorePermissionErrors: true,
         ignored: (path: string) => isIgnored(path),
         usePolling: options?.poll ? true : undefined,
-        interval: interval,
-        binaryInterval: interval,
+        // chokidar v4 doesn't fall back to its defaults for options explicitly set to undefined
+        ...(interval !== undefined && { interval, binaryInterval: interval }),
         alwaysStat: true,
         atomic: true,
         awaitWriteFinish: true,
