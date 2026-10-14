@@ -46,7 +46,7 @@
   "devDependencies": {
     "@babel/code-frame": "^7.29.7",
     "@rspack/core": "^2.2.9",
-    "@rstackjs/test-utils": "^0.2.0",
+    "@rstackjs/test-utils": "^1.0.0",
     "@types/babel__code-frame": "^7.27.0",
     "@types/is-glob": "^4.0.4",
     "@types/node": "^24.19.2",
