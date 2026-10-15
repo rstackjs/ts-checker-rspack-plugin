@@ -28,8 +28,8 @@ importers:
         specifier: ^2.2.9
         version: 2.2.9(@swc/helpers@0.5.23)
       '@rstackjs/test-utils':
-        specifier: ^0.2.0
-        version: 0.2.0
+        specifier: ^1.0.0
+        version: 1.0.0
       '@types/babel__code-frame':
         specifier: ^7.27.0
         version: 7.27.0
@@ -1391,8 +1391,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@rstackjs/test-utils@0.2.0':
-    resolution: {integrity: sha512-P+LOo1WE3xYeGkHmEthyq2cIpN69k4LhiB/4UBSceD+nW9hDlhWv8MC0LTLWokZXccWl4ntcfOBjQFllkcBlPA==}
+  '@rstackjs/test-utils@1.0.0':
+    resolution: {integrity: sha512-g7oEZzqwke/pRVGAsvEpML+37PDOo9BwR8nKignbtXlKmW9Cb202pRRUSVEsWG//7pnyIi+q4P7b1H/h1ianGA==}
 
   '@rstest/core@0.12.3':
     resolution: {integrity: sha512-l548qraJA1ymaSRhftgl++HtRf4E5l0Hm8YbzcsrH0t8XIOSpAiXyhgJpeHuyM50fKcNkt1nnS532Y7QV1iwcQ==}
@@ -3611,7 +3611,7 @@ snapshots:
   '@rstackjs/cli-win32-x64-msvc@0.8.4':
     optional: true
 
-  '@rstackjs/test-utils@0.2.0': {}
+  '@rstackjs/test-utils@1.0.0': {}
 
   '@rstest/core@0.12.3(core-js@3.44.0)':
     dependencies:
