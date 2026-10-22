@@ -272,30 +272,35 @@ function tapStartToRunTypeScriptGo(
         const abortController = new AbortController();
         state.abortController = abortController;
         debug(`Submitting tsgo to the pool, iteration ${iteration}.`);
-        return issuesPool.submit(async (signal) => {
-          try {
-            if (iteration !== state.iteration) return undefined;
-            debug(`Running tsgo, iteration ${iteration}.`);
-            const issues = await runTypeScriptGo(
-              config.typescript,
-              config.logger,
-              config.issue.defaultSeverity,
-              signal,
-              state.emittedFiles,
-            );
-            // Superseded reference builds finish emitting, but their issues are stale.
-            if (iteration !== state.iteration) return undefined;
-            if (state.aggregatedFilesChange === aggregatedFilesChange) {
-              state.aggregatedFilesChange = undefined;
-            }
-            if (state.abortController === abortController) {
-              if (issues.some(isTypeScriptGoIssue)) {
-                canReuseIssues = false;
+        return issuesPool
+          .submit(async (signal) => {
+            try {
+              if (iteration !== state.iteration) return undefined;
+              debug(`Running tsgo, iteration ${iteration}.`);
+              const issues = await runTypeScriptGo(
+                config.typescript,
+                config.logger,
+                config.issue.defaultSeverity,
+                signal,
+                state.emittedFiles,
+              );
+              // Superseded reference builds finish emitting, but their issues are stale.
+              if (iteration !== state.iteration) return undefined;
+              if (state.aggregatedFilesChange === aggregatedFilesChange) {
+                state.aggregatedFilesChange = undefined;
               }
-              state.abortController = undefined;
+              if (state.abortController === abortController) {
+                if (issues.some(isTypeScriptGoIssue)) {
+                  canReuseIssues = false;
+                }
+                state.abortController = undefined;
+              }
+              return issues;
+            } finally {
+              debug(`tsgo finished its job, iteration ${iteration}.`);
             }
-            return issues;
-          } catch (error) {
+          }, abortController.signal)
+          .catch((error) => {
             if (error instanceof AbortError && abortController.signal.aborted) {
               return undefined;
             }
@@ -304,10 +309,7 @@ function tapStartToRunTypeScriptGo(
             }
             hooks.error.call(error, compilation);
             return undefined;
-          } finally {
-            debug(`tsgo finished its job, iteration ${iteration}.`);
-          }
-        }, abortController.signal);
+          });
       });
   });
 
