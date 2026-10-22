@@ -9,6 +9,7 @@ import { getPluginHooks } from '../plugin-hooks';
 import { issuesPool } from '../plugin-pools';
 import type { TsCheckerRspackPluginState } from '../plugin-state';
 import { assertTypeScriptGoExecutable } from '../typescript/type-script-support';
+import { AbortError } from '../utils/async/abort-error';
 import {
   getTypeScriptGoDependencies,
   isTypeScriptGoIssue,
@@ -91,6 +92,9 @@ function tapStartToRunTypeScriptGo(
       state.initialized = true;
 
       state.watching = true;
+      if (config.typescript.build && config.typescript.mode === 'write-references') {
+        state.emittedFiles = new Map();
+      }
       if (config.async) {
         debug('Initializing tsgo for watch run (async).');
 
@@ -194,13 +198,11 @@ function tapStartToRunTypeScriptGo(
     canReuseIssues = false;
     const iteration = ++state.iteration;
 
-    if (state.abortController) {
+    // Reference builds must finish so their complete output list can be collected.
+    if (state.abortController && !state.emittedFiles) {
       debug(`Aborting tsgo iteration ${iteration - 1}.`);
       state.abortController.abort();
     }
-
-    const abortController = new AbortController();
-    state.abortController = abortController;
 
     if (state.watching) {
       // This mirrors the existing reporter infrastructure log and is only visible
@@ -263,20 +265,26 @@ function tapStartToRunTypeScriptGo(
     state.issuesPromise = (state.issuesPromise || Promise.resolve())
       .catch(() => undefined)
       .then(() => {
-        if (abortController.signal.aborted) {
+        if (iteration !== state.iteration) {
           return undefined;
         }
 
+        const abortController = new AbortController();
+        state.abortController = abortController;
         debug(`Submitting tsgo to the pool, iteration ${iteration}.`);
         return issuesPool.submit(async (signal) => {
           try {
+            if (iteration !== state.iteration) return undefined;
             debug(`Running tsgo, iteration ${iteration}.`);
             const issues = await runTypeScriptGo(
               config.typescript,
               config.logger,
               config.issue.defaultSeverity,
               signal,
+              state.emittedFiles,
             );
+            // Superseded reference builds finish emitting, but their issues are stale.
+            if (iteration !== state.iteration) return undefined;
             if (state.aggregatedFilesChange === aggregatedFilesChange) {
               state.aggregatedFilesChange = undefined;
             }
@@ -288,6 +296,9 @@ function tapStartToRunTypeScriptGo(
             }
             return issues;
           } catch (error) {
+            if (error instanceof AbortError && abortController.signal.aborted) {
+              return undefined;
+            }
             if (state.abortController === abortController) {
               canReuseIssues = false;
             }
@@ -301,6 +312,7 @@ function tapStartToRunTypeScriptGo(
   });
 
   const abortTypeScriptGo = () => {
+    ++state.iteration;
     if (state.abortController) {
       debug('Compiler is going to close - terminating tsgo...');
       state.abortController.abort();

@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { extname } from 'node:path';
 
 import type { FSWatcher } from 'chokidar';
@@ -10,6 +11,7 @@ import { clearFilesChange, updateFilesChange } from '../files-change';
 import { getInfrastructureLogger } from '../infrastructure-logger';
 import type { TsCheckerRspackPluginState } from '../plugin-state';
 import { isInsideAnotherPath } from '../utils/path/is-inside-another-path';
+import { toComparisonPath } from '../typescript/type-script-go-runner';
 
 import type { WatchFileSystem } from './watch-file-system';
 
@@ -172,7 +174,7 @@ class InclusiveNodeWatchFileSystem implements WatchFileSystem {
         awaitWriteFinish: true,
       });
 
-      dirWatcher.on('add', (file, stats) => {
+      dirWatcher.on('add', async (file, stats) => {
         if (this.paused) {
           return;
         }
@@ -185,8 +187,26 @@ class InclusiveNodeWatchFileSystem implements WatchFileSystem {
           return;
         }
 
-        debug('Detected new file add', file);
+        // Clear earlier deletions before waiting, so a later unlink invalidates this add.
         this.deletedFiles.delete(file);
+        if (this.pluginState.emittedFiles) {
+          // Emit reports arrive after files are written. Wait for the active
+          // checker before classifying an add event, without pruning directories.
+          await this.pluginState.issuesPromise.catch(() => undefined);
+          if (this.dirsWatchers.get(dirToWatch) !== dirWatcher || this.deletedFiles.has(file)) {
+            return;
+          }
+          const emittedMtime = this.pluginState.emittedFiles.get(toComparisonPath(file));
+          try {
+            if (emittedMtime !== undefined && fs.statSync(file).mtimeMs === emittedMtime) {
+              return;
+            }
+          } catch {
+            // Forward events if the current file state cannot be read.
+          }
+        }
+
+        debug('Detected new file add', file);
         updateFilesChange(this.compiler, { changedFiles: [file] });
 
         this.watcher?._onChange(file, stats?.mtimeMs || stats?.ctimeMs || 1, file, 'rename');
@@ -195,6 +215,7 @@ class InclusiveNodeWatchFileSystem implements WatchFileSystem {
         if (this.paused) {
           return;
         }
+        this.pluginState.emittedFiles?.delete(toComparisonPath(file));
 
         const extension = extname(file);
         const supportedExtensions = this.pluginState.lastDependencies?.extensions || [];

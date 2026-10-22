@@ -8,6 +8,7 @@ interface TsCheckerRspackPluginState {
   abortController: AbortController | undefined;
   aggregatedFilesChange: FilesChange | undefined;
   lastDependencies: FilesMatch | undefined;
+  emittedFiles?: Map<string, number>;
   watching: boolean;
   initialized: boolean;
   iteration: number;

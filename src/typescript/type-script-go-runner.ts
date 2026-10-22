@@ -149,8 +149,7 @@ function createTypeScriptGoArgs(config: TypeScriptWorkerConfig) {
   if (config.build && config.mode === 'write-references') {
     args.push('--noEmit', 'false');
   } else {
-    // Incremental .tsbuildinfo is still controlled by tsconfig's `incremental` /
-    // `composite` options, matching the compiler CLI.
+    // --noEmit may still write .tsbuildinfo according to incremental settings.
     args.push('--noEmit');
   }
 
@@ -211,8 +210,7 @@ function getTypeScriptGoDiagnosticMessage(
   ) {
     return [
       message,
-      'The native TypeScript checker cannot rebuild projects with references without emitting their required outputs.',
-      'Set `typescript.mode` to `write-references`, or build the references separately and set `typescript.build` to false.',
+      'In build mode, set `typescript.mode` to `write-references` to write the required outputs to disk, or build the project graph separately first.',
     ].join(' ');
   }
 
@@ -344,11 +342,16 @@ async function runTypeScriptGo(
   logger: Pick<Logger, 'error'>,
   defaultSeverity: IssueDefaultSeverity = 'auto',
   signal?: AbortSignal,
+  emittedFiles?: Map<string, number>,
 ): Promise<Issue[]> {
   AbortError.throwIfAborted(signal);
 
   const executable = await resolveTypeScriptGoExecutable(config);
   const args = createTypeScriptGoArgs(config);
+  if (emittedFiles) {
+    args.push('--listEmittedFiles');
+  }
+  AbortError.throwIfAborted(signal);
 
   return new Promise((resolve, reject) => {
     let settled = false;
@@ -377,7 +380,6 @@ async function runTypeScriptGo(
 
     const abort = () => {
       childProcess.kill('SIGKILL');
-      finish(() => reject(new AbortError()));
     };
 
     signal?.addEventListener('abort', abort, { once: true });
@@ -395,7 +397,21 @@ async function runTypeScriptGo(
     });
 
     childProcess.on('close', (exitCode, exitSignal) => {
+      output = output.replace(/^TSFILE: (.+?)\r?$/gm, (_, file: string) => {
+        try {
+          // Match the write's timestamp, so later user edits at the same path
+          // are still forwarded. The file may already have been removed.
+          emittedFiles?.set(toComparisonPath(file), fs.statSync(file).mtimeMs);
+        } catch {
+          // An unknown output must not suppress a potentially legitimate input.
+        }
+        return '';
+      });
       finish(() => {
+        if (signal?.aborted) {
+          reject(new AbortError());
+          return;
+        }
         if (exitCode === 0 && exitSignal === null) {
           logOutput(logger, output);
           resolve([]);

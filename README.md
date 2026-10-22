@@ -128,9 +128,7 @@ Limitations:
 - [`issue.include`](#include), [`issue.exclude`](#exclude), and [`issue.defaultSeverity`](#defaultseverity) only apply to diagnostics whose checker output can be matched by `file`, `line`, `column`, `code`, and `message`.
 - [`typescript.configOverwrite`](#configoverwrite), [`typescript.diagnosticOptions`](#diagnosticoptions), and [`typescript.profile`](#profile) are not supported.
 - TypeScript API-based formatting or filesystem output rewrites are not supported.
-- `write-dts` mode is not supported.
-- In build mode, `readonly` and `write-tsbuildinfo` cannot rebuild projects with references because the native TypeScript CLI cannot emit their required outputs with `--noEmit`. Use `write-references`, or build them separately and disable `typescript.build` for the checker.
-- `write-references` writes and reuses normal build outputs, including `.tsbuildinfo`; the plugin does not clean them.
+- For `typescript.mode`, `write-dts` is unsupported. In build mode, `readonly` / `write-tsbuildinfo` require an up-to-date project graph built beforehand. Use `write-references` to build unbuilt references; this writes compiler outputs to disk, and the plugin does not clean them.
 - This integration may change when TypeScript provides a stable JavaScript API for the native checker.
 
 ## Options
