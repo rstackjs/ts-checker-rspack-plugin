@@ -361,6 +361,24 @@ describe('typescript/type-script-go-runner', () => {
     ]);
   });
 
+  it('explains how to check project references when tsgo cannot disable emit', async () => {
+    const { parseTypeScriptGoIssues } = await import('src/typescript/type-script-go-runner');
+
+    expect(
+      parseTypeScriptGoIssues(
+        "tsconfig.json:1:1 - error TS6310: Referenced project './packages/shared' may not disable emit.",
+        { ...config, build: true, mode: 'write-tsbuildinfo' },
+      ),
+    ).toMatchObject([
+      {
+        code: 'TS6310',
+        message: expect.stringContaining(
+          'In build mode, set `typescript.mode` to `write-references`',
+        ),
+      },
+    ]);
+  });
+
   it('falls back to internal issues when parsed diagnostics do not match summary count', async () => {
     const { createTypeScriptGoExitIssues } = await import('src/typescript/type-script-go-runner');
 

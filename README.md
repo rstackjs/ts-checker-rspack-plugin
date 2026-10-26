@@ -99,8 +99,9 @@ Supported options include:
 - [`typescript.configFile`](#configfile)
 - [`typescript.context`](#context)
 - [`typescript.build`](#build)
-- `typescript.resolveRoot`
-- `typescript.typescriptPath`
+- [`typescript.mode`](#mode)
+- [`typescript.resolveRoot`](#resolveroot)
+- [`typescript.typescriptPath`](#typescriptpath)
 - [`async`](#async)
 - [`logger`](#logger)
 
@@ -127,7 +128,7 @@ Limitations:
 - [`issue.include`](#include), [`issue.exclude`](#exclude), and [`issue.defaultSeverity`](#defaultseverity) only apply to diagnostics whose checker output can be matched by `file`, `line`, `column`, `code`, and `message`.
 - [`typescript.configOverwrite`](#configoverwrite), [`typescript.diagnosticOptions`](#diagnosticoptions), and [`typescript.profile`](#profile) are not supported.
 - TypeScript API-based formatting or filesystem output rewrites are not supported.
-- Plugin-controlled declaration or reference emit modes such as `write-dts` and `write-references` are not supported. `tsgo` always runs with `--noEmit`.
+- For `typescript.mode`, `write-dts` is unsupported. In build mode, `readonly` / `write-tsbuildinfo` require an up-to-date project graph built beforehand. Use `write-references` to build unbuilt references; this writes compiler outputs to disk, and the plugin does not clean them.
 - This integration may change when TypeScript provides a stable JavaScript API for the native checker.
 
 ## Options
