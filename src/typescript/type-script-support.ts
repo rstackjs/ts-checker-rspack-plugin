@@ -6,6 +6,7 @@ import type { TypeScriptWorkerConfig } from './type-script-worker-config';
 import { getTsgoPackage, readTsgoPackageJson } from './type-script-go-package';
 import {
   TYPESCRIPT_PACKAGE,
+  TYPESCRIPT_PACKAGE_JSON,
   TYPESCRIPT_PREVIEW_PACKAGE,
   TYPESCRIPT_PREVIEW_PACKAGE_JSON,
 } from './type-script-go-constants';
@@ -45,7 +46,7 @@ function createTypeScriptGoSupportError(config: TypeScriptWorkerConfig, error?: 
 
   if (!isDefaultTypeScriptGoPath(config.typescriptPath)) {
     message.push(
-      '`typescript.typescriptPath` must be an absolute path to a native checker package.json with lib/getExePath.js exporting a function that returns the native executable path.',
+      `\`typescript.typescriptPath\` must be an absolute path to \`${TYPESCRIPT_PACKAGE_JSON}\`, legacy \`${TYPESCRIPT_PREVIEW_PACKAGE}\`, or a compatible native checker package.`,
     );
   }
 

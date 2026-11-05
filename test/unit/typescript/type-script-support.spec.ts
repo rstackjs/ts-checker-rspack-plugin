@@ -9,7 +9,7 @@ describe('typescript/type-script-support', () => {
   const tsgoRequirementMessage =
     '`typescript.tsgo` requires `typescript` >= 7.0.0, legacy `@typescript/native-preview`, or a compatible native checker package.';
   const tsgoPathMessage =
-    '`typescript.typescriptPath` must be an absolute path to a native checker package.json with lib/getExePath.js exporting a function that returns the native executable path.';
+    '`typescript.typescriptPath` must be an absolute path to `typescript/package.json`, legacy `@typescript/native-preview`, or a compatible native checker package.';
 
   function createTypeScriptPackage(version: string, name = 'typescript') {
     const packagePath = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-checker-typescript-support-'));
