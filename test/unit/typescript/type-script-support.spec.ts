@@ -7,11 +7,11 @@ describe('typescript/type-script-support', () => {
   let configuration: TypeScriptWorkerConfig;
   const tempDirs: string[] = [];
   const tsgoRequirementMessage =
-    '`typescript.tsgo` requires `typescript` >= 7.0.0 or legacy `@typescript/native-preview`.';
+    '`typescript.tsgo` requires `typescript` >= 7.0.0, legacy `@typescript/native-preview`, or a compatible native checker package.';
   const tsgoPathMessage =
-    '`typescript.typescriptPath` must be an absolute path to `typescript/package.json` or `@typescript/native-preview/package.json`.';
+    '`typescript.typescriptPath` must be an absolute path to `typescript/package.json`, legacy `@typescript/native-preview`, or a compatible native checker package.';
 
-  function createTypeScriptPackage(version: string) {
+  function createTypeScriptPackage(version: string, name = 'typescript') {
     const packagePath = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-checker-typescript-support-'));
     const libDir = path.join(packagePath, 'lib');
     const nativeTscPath = path.join(libDir, 'tsc');
@@ -21,7 +21,7 @@ describe('typescript/type-script-support', () => {
     fs.writeFileSync(
       path.join(packagePath, 'package.json'),
       JSON.stringify({
-        name: 'typescript',
+        name,
         version,
         bin: {
           tsc: 'bin/tsc',
@@ -157,6 +157,19 @@ describe('typescript/type-script-support', () => {
     ).toThrowError(
       "When you use TsCheckerRspackPlugin without `typescript.tsgo`, `typescript.typescriptPath` should point to a path like `require.resolve('typescript')`.",
     );
+  });
+
+  it('supports a custom native checker package', async () => {
+    const packageJsonPath = createTypeScriptPackage('0.22.0', 'tsrs');
+    const { assertTypeScriptGoExecutable, assertTypeScriptSupport } =
+      await import('src/typescript/type-script-support');
+    const config = { ...configuration, tsgo: true, typescriptPath: packageJsonPath };
+
+    expect(() => assertTypeScriptSupport(config)).not.toThrow();
+    await expect(assertTypeScriptGoExecutable(config)).resolves.toBeUndefined();
+
+    fs.rmSync(path.join(path.dirname(packageJsonPath), 'lib/getExePath.js'));
+    expect(() => assertTypeScriptSupport(config)).toThrowError(tsgoPathMessage);
   });
 
   it('does not print the typescriptPath hint for the default typescript-go path', async () => {

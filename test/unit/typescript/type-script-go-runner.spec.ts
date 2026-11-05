@@ -1,9 +1,12 @@
+import * as childProcess from 'node:child_process';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 
 import type { TypeScriptWorkerConfig } from 'src/typescript/type-script-worker-config';
+
+rs.mock('node:child_process', { spy: true });
 
 describe('typescript/type-script-go-runner', () => {
   const tsgoPackageJsonPath = require.resolve('@typescript/native-preview/package.json');
@@ -34,7 +37,7 @@ describe('typescript/type-script-go-runner', () => {
   };
   const tempDirs: string[] = [];
 
-  function createTypeScriptPackage(version: string) {
+  function createTypeScriptPackage(version: string, name = 'typescript') {
     const packagePath = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-checker-typescript-go-'));
     const libDir = path.join(packagePath, 'lib');
     const nativeTscPath = path.join(libDir, 'tsc');
@@ -44,7 +47,7 @@ describe('typescript/type-script-go-runner', () => {
     fs.writeFileSync(
       path.join(packagePath, 'package.json'),
       JSON.stringify({
-        name: 'typescript',
+        name,
         version,
         bin: {
           tsc: 'bin/tsc',
@@ -66,6 +69,7 @@ describe('typescript/type-script-go-runner', () => {
   }
 
   afterEach(() => {
+    rs.restoreAllMocks();
     for (const tempDir of tempDirs.splice(0)) {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }
@@ -258,19 +262,116 @@ describe('typescript/type-script-go-runner', () => {
     });
   });
 
-  it('rejects tsgo package paths that were not classified by config', async () => {
-    const { packageJsonPath } = createTypeScriptPackage('6.0.3');
-    const { resolveTypeScriptGoPackageJsonPath } =
-      await import('src/typescript/type-script-go-runner');
+  it('resolves a custom native checker without a recognized package name or version', async () => {
+    const { packageJsonPath, nativeTscPath } = createTypeScriptPackage('0.22.0', 'tsrs');
+    const { resolveTypeScriptGoExecutable } = await import('src/typescript/type-script-go-runner');
 
-    expect(() =>
-      resolveTypeScriptGoPackageJsonPath({
+    await expect(
+      resolveTypeScriptGoExecutable({
         ...config,
         typescriptPath: packageJsonPath,
         tsgoPackage: undefined,
       }),
-    ).toThrowError('typescript@>=7');
+    ).resolves.toEqual({ command: nativeTscPath, args: [] });
   });
+
+  it.each([
+    [{}, []],
+    [{ runExternalCode: false }, []],
+    [{ runExternalCode: true }, ['--runExternalCode']],
+    [{ cliArgs: ['--fast'] }, ['--fast']],
+    [
+      { runExternalCode: true, cliArgs: ['--fast', '--locale', 'en'] },
+      ['--runExternalCode', '--fast', '--locale', 'en'],
+    ],
+  ])('passes native compiler options %p after project selection', async (options, args) => {
+    const { createTypeScriptGoArgs } = await import('src/typescript/type-script-go-runner');
+
+    for (const build of [false, true]) {
+      expect(createTypeScriptGoArgs({ ...config, ...options, build })).toEqual([
+        build ? '--build' : '--project',
+        config.configFile,
+        ...args,
+        '--noEmit',
+        '--pretty',
+      ]);
+    }
+  });
+
+  it.each([false, true])(
+    'forwards custom arguments to checking and config discovery (build: %p)',
+    async (build) => {
+      const { packageJsonPath, nativeTscPath } = createTypeScriptPackage('0.22.0', 'tsrs');
+      const projectPath = path.dirname(packageJsonPath);
+      const configFile = path.join(projectPath, 'tsconfig.json');
+      const rootFile = path.join(projectPath, 'root.ts');
+      const argsFile = path.join(projectPath, 'args.json');
+      fs.writeFileSync(configFile, '{}');
+      fs.writeFileSync(rootFile, 'export {};');
+      fs.writeFileSync(
+        nativeTscPath,
+        [
+          '#!/usr/bin/env node',
+          "const fs = require('node:fs');",
+          'const args = process.argv.slice(2);',
+          `fs.writeFileSync(${JSON.stringify(argsFile)}, JSON.stringify(args));`,
+          `if (args.includes('--showConfig')) console.log(JSON.stringify({ files: ['root.ts'] }));`,
+        ].join('\n'),
+      );
+      const customConfig = {
+        ...config,
+        build,
+        context: projectPath,
+        configFile,
+        typescriptPath: packageJsonPath,
+        tsgoPackage: undefined,
+        runExternalCode: true,
+        cliArgs: ['--fast', '--custom-value', 'value with spaces'],
+      };
+      const { getTypeScriptGoDependencies, runTypeScriptGo } =
+        await import('src/typescript/type-script-go-runner');
+
+      // Launch the fake checker with Node so the test also works on Windows.
+      const { spawn: originalSpawn, execFile: originalExecFile } =
+        await rs.importActual<typeof childProcess>('node:child_process');
+      rs.spyOn(childProcess, 'spawn').mockImplementation((_command, args, options) =>
+        originalSpawn(process.execPath, [nativeTscPath, ...(args as string[])], options),
+      );
+      rs.spyOn(childProcess, 'execFile').mockImplementation((_command, args, options, callback) =>
+        originalExecFile(
+          process.execPath,
+          [nativeTscPath, ...(args as string[])],
+          options,
+          callback,
+        ),
+      );
+      await expect(runTypeScriptGo(customConfig, { error: rs.fn() })).resolves.toEqual([]);
+      expect(JSON.parse(fs.readFileSync(argsFile, 'utf8'))).toEqual([
+        build ? '--build' : '--project',
+        configFile,
+        '--runExternalCode',
+        '--fast',
+        '--custom-value',
+        'value with spaces',
+        '--noEmit',
+        '--pretty',
+      ]);
+
+      const dependencies = await getTypeScriptGoDependencies(customConfig);
+      expect(dependencies.files).toContain(rootFile);
+      expect(JSON.parse(fs.readFileSync(argsFile, 'utf8'))).toEqual([
+        '--project',
+        configFile,
+        '--runExternalCode',
+        '--fast',
+        '--custom-value',
+        'value with spaces',
+        '--showConfig',
+        '--pretty',
+        'false',
+      ]);
+    },
+  );
 
   it('extracts the error count from tsgo summary output', async () => {
     const { getTypeScriptGoErrorCount } = await import('src/typescript/type-script-go-runner');

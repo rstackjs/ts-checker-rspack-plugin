@@ -13,6 +13,8 @@ type TypeScriptWorkerOptions = {
   resolveRoot?: string;
   typescriptPath?: string;
   tsgo?: boolean;
+  runExternalCode?: boolean;
+  cliArgs?: string[];
 };
 
 export type { TypeScriptWorkerOptions };
