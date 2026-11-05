@@ -102,6 +102,8 @@ Supported options include:
 - [`typescript.mode`](#mode)
 - [`typescript.resolveRoot`](#resolveroot)
 - [`typescript.typescriptPath`](#typescriptpath)
+- [`typescript.runExternalCode`](#runexternalcode)
+- [`typescript.cliArgs`](#cliargs)
 - [`async`](#async)
 - [`logger`](#logger)
 
@@ -461,7 +463,10 @@ new TsCheckerRspackPlugin({
 Custom TypeScript path.
 
 - Without `tsgo`, point to the TypeScript package entry.
-- In `tsgo` mode, use an absolute path to the TypeScript 7+ `package.json`
+- In `tsgo` mode, use an absolute path to a native checker `package.json`.
+  Custom packages must provide `lib/getExePath.js` with a default or named
+  `getExePath` export that returns the native executable path. Package names and
+  versions are not checked when `tsgo: true` is explicitly configured.
 
 - **Type:** `string`
 - **Default:**
@@ -499,6 +504,47 @@ new TsCheckerRspackPlugin({
   },
 });
 ```
+
+### runExternalCode
+
+Passes `--runExternalCode` to the native checker, for example to allow execution
+of plugins loaded by the checker. Only used in `tsgo` mode. The configured
+checker must support this flag.
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+### cliArgs
+
+Additional arguments passed directly to the native checker, without shell
+parsing. Only used in `tsgo` mode. Each flag and its value should be separate
+array entries.
+
+These arguments and [`runExternalCode`](#runexternalcode) apply to both type
+checking and `--showConfig` calls used to discover watched files. They are passed
+after project selection and before the plugin's managed arguments for emitting
+and output formatting. Avoid flags that change these behaviors or start a persistent process
+such as `--watch`.
+
+- **Type:** `string[]`
+- **Default:** `[]`
+- **Example:**
+
+Use [**tsrs**](https://github.com/oxc-project/tsrs) with its optional `--fast` flag:
+
+```js
+new TsCheckerRspackPlugin({
+  typescript: {
+    tsgo: true,
+    typescriptPath: require.resolve('tsrs/package.json'),
+    runExternalCode: true,
+    cliArgs: ['--fast'],
+  },
+});
+```
+
+For custom packages, set `tsgo: true` explicitly. Automatic detection remains
+limited to TypeScript 7+.
 
 ## Issues options
 

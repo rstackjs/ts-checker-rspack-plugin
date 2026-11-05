@@ -132,6 +132,10 @@ describe('typescript/type-scripts-worker-config', () => {
     [{ profile: true }, { ...configuration, profile: true }],
     [{ tsgo: true }, tsgoConfiguration],
     [
+      { tsgo: true, runExternalCode: true, cliArgs: ['--fast'] },
+      { ...tsgoConfiguration, runExternalCode: true, cliArgs: ['--fast'] },
+    ],
+    [
       { tsgo: true, typescriptPath: customPreviewPackageJsonPath },
       {
         ...configuration,
@@ -287,5 +291,20 @@ describe('typescript/type-scripts-worker-config', () => {
       tsgo: false,
       typescriptPath: packageJsonPath,
     });
+  });
+
+  it('requires explicit tsgo opt-in for an unrecognized native checker package', async () => {
+    const packageJsonPath = createTypeScriptPackage('0.22.0');
+    fs.writeFileSync(packageJsonPath, JSON.stringify({ name: 'tsrs', version: '0.22.0' }));
+    const { createTypeScriptWorkerConfig } =
+      await import('src/typescript/type-script-worker-config');
+
+    expect(createTypeScriptWorkerConfig(compiler, { typescriptPath: packageJsonPath })).toEqual({
+      ...configuration,
+      typescriptPath: packageJsonPath,
+    });
+    expect(
+      createTypeScriptWorkerConfig(compiler, { tsgo: true, typescriptPath: packageJsonPath }),
+    ).toEqual({ ...configuration, tsgo: true, typescriptPath: packageJsonPath });
   });
 });

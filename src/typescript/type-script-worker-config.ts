@@ -28,6 +28,8 @@ interface TypeScriptWorkerConfig {
   resolveRoot?: string;
   typescriptPath: string;
   tsgo?: boolean;
+  runExternalCode?: boolean;
+  cliArgs?: string[];
   tsgoPackage?: TypeScriptGoPackage;
 }
 

@@ -12,12 +12,7 @@ import { AbortError } from '../utils/async/abort-error';
 import { isInsideAnotherPath } from '../utils/path/is-inside-another-path';
 
 import type { TypeScriptWorkerConfig } from './type-script-worker-config';
-import {
-  TYPESCRIPT_GO_ISSUE_CODE,
-  TYPESCRIPT_PACKAGE,
-  TYPESCRIPT_PREVIEW_PACKAGE,
-  TYPESCRIPT_PREVIEW_PACKAGE_JSON,
-} from './type-script-go-constants';
+import { TYPESCRIPT_GO_ISSUE_CODE } from './type-script-go-constants';
 
 type TypeScriptGoExecutable = {
   command: string;
@@ -40,26 +35,17 @@ function resolveTypeScriptGoPackageJsonPath(config: TypeScriptWorkerConfig): str
     );
   }
 
-  if (!config.tsgoPackage) {
-    throw new Error(
-      `The typescriptPath option must point to "${TYPESCRIPT_PREVIEW_PACKAGE_JSON}" or "${TYPESCRIPT_PACKAGE}@>=7".`,
-    );
-  }
-
   return config.typescriptPath;
 }
 
-async function resolveTypeScriptGoNativeExecutablePath(
-  packageJsonPath: string,
-  packageName: string,
-): Promise<string> {
+async function resolveTypeScriptGoNativeExecutablePath(packageJsonPath: string): Promise<string> {
   const getExePathPath = path.resolve(path.dirname(packageJsonPath), './lib/getExePath.js');
   const getExePathUrl = pathToFileURL(getExePathPath).href;
   const getExePathModule = await import(getExePathUrl);
   const getExePath = getExePathModule.default || getExePathModule.getExePath;
 
   if (typeof getExePath !== 'function') {
-    throw new Error(`Cannot resolve the native TypeScript executable from "${packageName}".`);
+    throw new Error(`Cannot resolve the native TypeScript executable from "${packageJsonPath}".`);
   }
 
   const executablePath = getExePath();
@@ -74,11 +60,7 @@ async function resolveTypeScriptGoNativeExecutablePath(
 async function resolveTypeScriptGoBinPath(config: TypeScriptWorkerConfig): Promise<string> {
   const packageJsonPath = resolveTypeScriptGoPackageJsonPath(config);
 
-  if (config.tsgoPackage === 'typescript') {
-    return resolveTypeScriptGoNativeExecutablePath(packageJsonPath, TYPESCRIPT_PACKAGE);
-  }
-
-  return resolveTypeScriptGoNativeExecutablePath(packageJsonPath, TYPESCRIPT_PREVIEW_PACKAGE);
+  return resolveTypeScriptGoNativeExecutablePath(packageJsonPath);
 }
 
 async function resolveTypeScriptGoExecutable(
@@ -92,15 +74,28 @@ async function resolveTypeScriptGoExecutable(
   };
 }
 
+function createTypeScriptGoExtraArgs(config: TypeScriptWorkerConfig): string[] {
+  return [...(config.runExternalCode ? ['--runExternalCode'] : []), ...(config.cliArgs || [])];
+}
+
 async function runTypeScriptGoShowConfig(
   executable: TypeScriptGoExecutable,
   configFile: string,
+  config: TypeScriptWorkerConfig,
 ): Promise<TypeScriptGoShowConfig> {
   // TS 7's JavaScript config API is still unstable. The stable CLI exposes the
   // resolved root file list and project references through --showConfig.
   const { stdout } = await promisify(execFile)(
     executable.command,
-    [...executable.args, '--project', configFile, '--showConfig', '--pretty', 'false'],
+    [
+      ...executable.args,
+      '--project',
+      configFile,
+      ...createTypeScriptGoExtraArgs(config),
+      '--showConfig',
+      '--pretty',
+      'false',
+    ],
     {
       cwd: path.dirname(configFile),
       encoding: 'utf8',
@@ -145,6 +140,7 @@ function shouldRefreshTypeScriptGoDependencies(
 
 function createTypeScriptGoArgs(config: TypeScriptWorkerConfig) {
   const args = config.build ? ['--build', config.configFile] : ['--project', config.configFile];
+  args.push(...createTypeScriptGoExtraArgs(config));
 
   if (config.build && config.mode === 'write-references') {
     args.push('--noEmit', 'false');
@@ -464,7 +460,7 @@ async function getTypeScriptGoDependencies(config: TypeScriptWorkerConfig): Prom
 
     let parsedConfig: TypeScriptGoShowConfig | undefined;
     try {
-      parsedConfig = await runTypeScriptGoShowConfig(executable, normalizedConfigFile);
+      parsedConfig = await runTypeScriptGoShowConfig(executable, normalizedConfigFile, config);
     } catch {
       return;
     }
