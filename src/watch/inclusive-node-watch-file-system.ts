@@ -8,6 +8,7 @@ import isGlob from 'is-glob';
 import type { Compiler } from '@rspack/core';
 
 import { clearFilesChange, updateFilesChange } from '../files-change';
+import { isContentMapperFile } from '../files-match';
 import { getInfrastructureLogger } from '../infrastructure-logger';
 import type { TsCheckerRspackPluginState } from '../plugin-state';
 import { isInsideAnotherPath } from '../utils/path/is-inside-another-path';
@@ -182,7 +183,10 @@ class InclusiveNodeWatchFileSystem implements WatchFileSystem {
         const extension = extname(file);
         const supportedExtensions = this.pluginState.lastDependencies?.extensions || [];
 
-        if (!supportedExtensions.includes(extension)) {
+        if (
+          !supportedExtensions.includes(extension) &&
+          !isContentMapperFile(file, this.pluginState.lastDependencies?.contentMappers)
+        ) {
           debug('Detected new file add but extension is not supported', file);
           return;
         }
@@ -220,7 +224,10 @@ class InclusiveNodeWatchFileSystem implements WatchFileSystem {
         const extension = extname(file);
         const supportedExtensions = this.pluginState.lastDependencies?.extensions || [];
 
-        if (!supportedExtensions.includes(extension)) {
+        if (
+          !supportedExtensions.includes(extension) &&
+          !isContentMapperFile(file, this.pluginState.lastDependencies?.contentMappers)
+        ) {
           debug('Detected new file remove but extension is not supported', file);
           return;
         }

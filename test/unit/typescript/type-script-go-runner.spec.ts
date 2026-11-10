@@ -127,6 +127,42 @@ describe('typescript/type-script-go-runner', () => {
     expect(dependencies.extensions).toEqual(extensions);
   });
 
+  it('resolves inherited mapper suffixes and respects an empty override', async () => {
+    const projectPath = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-checker-mappers-'));
+    tempDirs.push(projectPath);
+    const configFile = path.join(projectPath, 'tsconfig.json');
+    fs.writeFileSync(path.join(projectPath, 'index.ts'), 'export {};');
+    fs.writeFileSync(
+      path.join(projectPath, 'tsconfig.base.json'),
+      JSON.stringify({
+        contentMappers: [{ package: 'test-mapper', extensions: ['.module.css'] }],
+      }),
+    );
+    fs.writeFileSync(configFile, '{ // inherited mapper\n "extends": "./tsconfig.base.json", }');
+    const mapperConfig = {
+      ...config,
+      configFile,
+      context: projectPath,
+      typescriptPath: require.resolve('typescript-7-1/package.json'),
+      tsgoPackage: 'typescript' as const,
+    };
+    const { getTypeScriptGoDependencies, shouldRefreshTypeScriptGoDependencies } =
+      await import('src/typescript/type-script-go-runner');
+    const dependencies = await getTypeScriptGoDependencies(mapperConfig);
+    expect(dependencies.contentMappers).toEqual({ extensions: ['.module.css'] });
+    expect(
+      shouldRefreshTypeScriptGoDependencies(dependencies, {
+        changedFiles: [path.join(projectPath, 'style.module.css')],
+      }),
+    ).toBe(false);
+
+    fs.writeFileSync(
+      configFile,
+      JSON.stringify({ extends: './tsconfig.base.json', contentMappers: [] }),
+    );
+    expect((await getTypeScriptGoDependencies(mapperConfig)).contentMappers).toBeUndefined();
+  });
+
   it('collects files from project references', async () => {
     const workspacePath = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-checker-tsgo-solution-'));
     const projectPath = path.join(workspacePath, 'root');

@@ -2,7 +2,7 @@ import type * as rspack from '@rspack/core';
 
 import type { FilesChange } from '../files-change';
 import { aggregateFilesChanges, consumeFilesChange } from '../files-change';
-import type { FilesMatch } from '../files-match';
+import { isContentMapperFile, type FilesMatch } from '../files-match';
 import { getInfrastructureLogger } from '../infrastructure-logger';
 import type { TsCheckerRspackPluginConfig } from '../plugin-config';
 import { getPluginHooks } from '../plugin-hooks';
@@ -186,7 +186,10 @@ function tapStartToRunTypeScriptGo(
       !compiler.removedFiles?.size &&
       changedFiles.length > 0 &&
       changedFiles.every(
-        (file) => STYLE_FILE.test(file) && !dependencyPaths.has(toComparisonPath(file)),
+        (file) =>
+          STYLE_FILE.test(file) &&
+          !dependencyPaths.has(toComparisonPath(file)) &&
+          !isContentMapperFile(file, state.lastDependencies!.contentMappers),
       )
     ) {
       debug('Reusing tsgo issues for style-only changes.');
@@ -220,7 +223,7 @@ function tapStartToRunTypeScriptGo(
 
     const cacheGeneration = ++dependenciesCacheGeneration;
     const startPromise = hooks.start.promise(filesChange, compilation);
-    state.dependenciesPromise = startPromise.then((nextFilesChange) => {
+    const currentDependenciesPromise = startPromise.then((nextFilesChange) => {
       if (cacheGeneration !== dependenciesCacheGeneration) {
         return undefined;
       }
@@ -246,6 +249,7 @@ function tapStartToRunTypeScriptGo(
       }
       return nextDependenciesPromise;
     });
+    state.dependenciesPromise = currentDependenciesPromise;
 
     filesChange = await startPromise;
     let aggregatedFilesChange = filesChange;
@@ -283,6 +287,7 @@ function tapStartToRunTypeScriptGo(
                 config.issue.defaultSeverity,
                 signal,
                 state.emittedFiles,
+                currentDependenciesPromise,
               );
               // Superseded reference builds finish emitting, but their issues are stale.
               if (iteration !== state.iteration) return undefined;

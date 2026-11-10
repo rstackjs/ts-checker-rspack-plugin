@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
+import { parseTsconfig } from 'get-tsconfig';
 
 import type { FilesChange } from '../files-change';
 import type { FilesMatch } from '../files-match';
@@ -12,6 +13,7 @@ import { AbortError } from '../utils/async/abort-error';
 import { isInsideAnotherPath } from '../utils/path/is-inside-another-path';
 
 import type { TypeScriptWorkerConfig } from './type-script-worker-config';
+import { readTsgoPackageJson } from './type-script-go-package';
 import {
   TYPESCRIPT_GO_ISSUE_CODE,
   TYPESCRIPT_PACKAGE,
@@ -29,6 +31,13 @@ type TypeScriptGoShowConfig = {
   files?: string[];
   references?: { path?: string }[];
 };
+
+function supportsContentMappers(config: TypeScriptWorkerConfig): boolean {
+  const [major = 0, minor = 0] = (readTsgoPackageJson(config.typescriptPath).version || '')
+    .split('.')
+    .map(Number);
+  return major > 7 || (major === 7 && minor >= 1);
+}
 
 function resolveTypeScriptGoPackageJsonPath(config: TypeScriptWorkerConfig): string {
   if (
@@ -343,11 +352,19 @@ async function runTypeScriptGo(
   defaultSeverity: IssueDefaultSeverity = 'auto',
   signal?: AbortSignal,
   emittedFiles?: Map<string, number>,
+  dependencies?: FilesMatch | Promise<FilesMatch | undefined>,
 ): Promise<Issue[]> {
   AbortError.throwIfAborted(signal);
 
   const executable = await resolveTypeScriptGoExecutable(config);
   const args = createTypeScriptGoArgs(config);
+  if (supportsContentMappers(config)) {
+    const resolvedDependencies =
+      (await dependencies) || (await getTypeScriptGoDependencies(config));
+    if (resolvedDependencies.contentMappers) {
+      args.push('--runExternalCode');
+    }
+  }
   if (emittedFiles) {
     args.push('--listEmittedFiles');
   }
@@ -436,6 +453,8 @@ async function getTypeScriptGoDependencies(config: TypeScriptWorkerConfig): Prom
   const dirs = new Set<string>();
   const excluded = new Set<string>();
   const visitedConfigs = new Set<string>();
+  const canRunContentMappers = supportsContentMappers(config);
+  let contentMappers: FilesMatch['contentMappers'];
 
   const collectConfigDependencies = async (
     configFile: string,
@@ -461,6 +480,32 @@ async function getTypeScriptGoDependencies(config: TypeScriptWorkerConfig): Prom
       dirs.add(normalizedRoot);
     }
     excluded.add(path.join(normalizedRoot, 'node_modules'));
+
+    if (canRunContentMappers) {
+      try {
+        // --showConfig omits contentMappers, so resolve JSONC and extends separately.
+        const resolvedConfig = parseTsconfig(normalizedConfigFile);
+        const mappers =
+          'contentMappers' in resolvedConfig ? resolvedConfig.contentMappers : undefined;
+        if (Array.isArray(mappers) && mappers.length) {
+          contentMappers ||= { extensions: [] };
+          for (const mapper of mappers) {
+            if (!Array.isArray(mapper?.extensions)) continue;
+            for (const extension of mapper.extensions) {
+              if (
+                typeof extension === 'string' &&
+                extension.length > 0 &&
+                !contentMappers.extensions.includes(extension)
+              ) {
+                contentMappers.extensions.push(extension);
+              }
+            }
+          }
+        }
+      } catch {
+        // Let the native checker report configuration errors.
+      }
+    }
 
     let parsedConfig: TypeScriptGoShowConfig | undefined;
     try {
@@ -499,6 +544,7 @@ async function getTypeScriptGoDependencies(config: TypeScriptWorkerConfig): Prom
     dirs: Array.from(dirs),
     excluded: Array.from(excluded),
     extensions: ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs', '.json'],
+    ...(contentMappers ? { contentMappers } : {}),
   };
 }
 

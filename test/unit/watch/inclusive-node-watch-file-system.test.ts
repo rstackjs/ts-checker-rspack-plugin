@@ -111,6 +111,50 @@ describe('createIsIgnored', () => {
 });
 
 describe('InclusiveNodeWatchFileSystem', () => {
+  it('matches complete mapper suffixes for added and removed files', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ts-checker-mapper-watch-'));
+    const chokidarWatch = rs.spyOn(chokidar, 'watch');
+    const compiler = rspack({});
+    const pluginState = createPluginState();
+    pluginState.lastDependencies = {
+      files: [],
+      dirs: [dir],
+      excluded: [],
+      extensions: ['.ts'],
+      contentMappers: { extensions: ['.module.css'] },
+    };
+    assert(compiler.watchFileSystem);
+    const fileSystem = new InclusiveNodeWatchFileSystem(
+      compiler.watchFileSystem,
+      compiler,
+      pluginState,
+    );
+    const watching = fileSystem.watch([], [], [], Date.now(), {}, rs.fn(), rs.fn());
+    try {
+      const dirWatcher: FSWatcher = chokidarWatch.mock.results[0].value;
+      await new Promise((resolve) => dirWatcher.on('ready', resolve));
+      assert(fileSystem.watcher);
+      const onChange = rs.spyOn(fileSystem.watcher, '_onChange').mockImplementation(() => {});
+      const onRemove = rs.spyOn(fileSystem.watcher, '_onRemove').mockImplementation(() => {});
+      const ordinaryStyle = join(dir, 'style.css');
+      const mappedStyle = join(dir, 'style.module.css');
+
+      dirWatcher.emit('add', ordinaryStyle);
+      dirWatcher.emit('unlink', ordinaryStyle);
+      expect(onChange).not.toHaveBeenCalled();
+      expect(onRemove).not.toHaveBeenCalled();
+
+      dirWatcher.emit('add', mappedStyle);
+      dirWatcher.emit('unlink', mappedStyle);
+      expect(onChange).toHaveBeenCalledWith(mappedStyle, 1, mappedStyle, 'rename');
+      expect(onRemove).toHaveBeenCalledWith(dir, mappedStyle, 'rename');
+    } finally {
+      watching.close();
+      chokidarWatch.mockRestore();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it.each([true, 50])('should watch dependency dirs with poll: %s', async (poll) => {
     const dir = mkdtempSync(join(tmpdir(), 'ts-checker-watch-'));
     const chokidarWatch = rs.spyOn(chokidar, 'watch');
