@@ -108,6 +108,8 @@ Supported options include:
 It also supports `tsconfig.json` compiler options used by `tsgo`,
 including `incremental` and `composite`.
 
+With TypeScript 7.1+, configuring `contentMappers` in `tsconfig.json` automatically enables `--runExternalCode`.
+
 Install TypeScript >= 7.0.0 to enable `tsgo` automatically:
 
 ```sh

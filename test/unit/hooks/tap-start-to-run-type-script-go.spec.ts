@@ -152,6 +152,17 @@ it('checks styles used as explicit TypeScript dependencies', async () => {
   expect(runTypeScriptGo).toHaveBeenCalledTimes(2);
 });
 
+it('rechecks only styles matching a complete mapper suffix', async () => {
+  const { compile, state } = setup();
+  await compile();
+  state.lastDependencies!.contentMappers = { extensions: ['.module.css'] };
+
+  await compile(['/src/style.css']);
+  expect(runTypeScriptGo).toHaveBeenCalledTimes(1);
+  await compile(['/src/style.module.css']);
+  expect(runTypeScriptGo).toHaveBeenCalledTimes(2);
+});
+
 it('continues calling custom start hooks', async () => {
   const { compile, compiler } = setup();
   const start = rs.fn((changes) => changes);
