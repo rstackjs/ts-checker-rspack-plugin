@@ -58,7 +58,7 @@
     "rstack": "^0.8.3",
     "strip-ansi": "^7.2.0",
     "typescript": "^6.0.3",
-    "typescript-7-1": "npm:typescript@7.1.0-beta"
+    "typescript-7-1": "npm:typescript@7.1.0-dev.20261121.1"
   },
   "peerDependencies": {
     "@rspack/core": "^1.0.0 || ^2.0.0",
