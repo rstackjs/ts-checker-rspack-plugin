@@ -1,7 +1,8 @@
 import { execFile, spawn } from 'node:child_process';
 import fs from 'node:fs';
+import nodeModule from 'node:module';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import url from 'node:url';
 import { promisify } from 'node:util';
 import { parseTsconfig } from 'get-tsconfig';
 
@@ -63,7 +64,7 @@ async function resolveTypeScriptGoNativeExecutablePath(
   packageName: string,
 ): Promise<string> {
   const getExePathPath = path.resolve(path.dirname(packageJsonPath), './lib/getExePath.js');
-  const getExePathUrl = pathToFileURL(getExePathPath).href;
+  const getExePathUrl = url.pathToFileURL(getExePathPath).href;
   const getExePathModule = await import(getExePathUrl);
   const getExePath = getExePathModule.default || getExePathModule.getExePath;
 
@@ -71,7 +72,8 @@ async function resolveTypeScriptGoNativeExecutablePath(
     throw new Error(`Cannot resolve the native TypeScript executable from "${packageName}".`);
   }
 
-  const executablePath = getExePath();
+  // Newer TypeScript versions take their Node modules from the caller.
+  const executablePath = getExePath({ fs, module: nodeModule, path, url });
 
   if (typeof executablePath !== 'string' || !fs.existsSync(executablePath)) {
     throw new Error('Executable not found');
