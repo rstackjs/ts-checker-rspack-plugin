@@ -55,7 +55,7 @@
     "get-tsconfig": "4.14.3",
     "is-glob": "^4.0.3",
     "minimatch": "^10.2.6",
-    "rstack": "^0.9.3",
+    "rstack": "^0.9.5",
     "strip-ansi": "^7.2.0",
     "typescript": "^6.0.3",
     "typescript-7-1": "npm:typescript@7.1.0-dev.20261121.1"
@@ -73,7 +73,7 @@
       "optional": true
     }
   },
-  "packageManager": "pnpm@11.29.0",
+  "packageManager": "pnpm@12.18.0",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
