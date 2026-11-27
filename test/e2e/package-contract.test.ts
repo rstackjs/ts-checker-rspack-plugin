@@ -19,8 +19,12 @@ function execPnpm(args: string[], cwd: string) {
 }
 
 function execPnpmWithCli(args: string[], cwd: string, pnpmCli: string | null) {
-  if (pnpmCli) {
+  if (pnpmCli && /\.[cm]?js$/i.test(pnpmCli)) {
     return execFileAsync(process.execPath, [pnpmCli, ...args], { cwd });
+  }
+
+  if (pnpmCli && (process.platform !== 'win32' || pnpmCli.endsWith('.exe'))) {
+    return execFileAsync(pnpmCli, args, { cwd });
   }
 
   if (process.platform === 'win32') {
